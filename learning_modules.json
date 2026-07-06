@@ -1,0 +1,58 @@
+[
+  {
+    "id": 1,
+    "badge": "MÓDULO 1",
+    "title": "Aplicações da IA na Gestão",
+    "desc": "Você domina as ferramentas certas, personaliza a IA para seu contexto e integra imediatamente no seu dia a dia para ganhar velocidade e precisão na operação.",
+    "image": "mod1Image"
+  },
+  {
+    "id": 2,
+    "badge": "MÓDULO 2",
+    "title": "Engenharia de Prompts na Gestão",
+    "desc": "Você aprende a construir prompts cirúrgicos que extraem potencial real das IAs e resolvem problemas da sua gestão. A IA deixa de ser \"uma máquina de respostas\" e passa a ser um copiloto do seu negócio.",
+    "image": "https://images.unsplash.com/photo-1542831371-29b0f74f9713?auto=format&fit=crop&q=80&w=800"
+  },
+  {
+    "id": 3,
+    "badge": "MÓDULO 3",
+    "title": "Agentes Departamentais",
+    "desc": "Você cria IAs do zero para operar em áreas chave: financeiro, marketing, RH, operações. Um time de especialistas digitais que automatizam tarefas, integram sistemas e agem como profissionais treinados.",
+    "image": "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&q=80&w=800"
+  },
+  {
+    "id": 4,
+    "badge": "MÓDULO 4",
+    "title": "Análise de Dados e Decisões",
+    "desc": "Você transforma seus dados e planilhas em análises visuais claras e ágeis, identifica padrões críticos e toma decisões com mais segurança. Sem depender de analistas ou esperar relatórios demorados.",
+    "image": "mod4Image"
+  },
+  {
+    "id": 5,
+    "badge": "MÓDULO 5",
+    "title": "Liderança 4.0 com IA",
+    "desc": "Você cria seu modelo de liderança que funciona sem sua presença constante. A IA otimiza parte da comunicação, acelera procedimentos e transforma estratégia em execução previsível.",
+    "image": "https://images.unsplash.com/photo-1507413245164-6160d8298b31?auto=format&fit=crop&q=80&w=800"
+  },
+  {
+    "id": 6,
+    "badge": "MÓDULO 6",
+    "title": "Processos Lean com IA",
+    "desc": "Você mapeia, otimiza e acelera processos-chave, cortando desperdícios e aumentando eficiência. Resultado: operações mais enxutas, rápidas e com menor custo.",
+    "image": "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=800"
+  },
+  {
+    "id": 7,
+    "badge": "MÓDULO 7",
+    "title": "Gestão de Pessoas com IA",
+    "desc": "Você usa IA para mapear talentos, alinhar metas e corrigir desvios com feedbacks baseados em dados. Equipes mais produtivas, alinhadas e que entregam mais.",
+    "image": "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&q=80&w=800"
+  },
+  {
+    "id": 8,
+    "badge": "MÓDULO 8",
+    "title": "Carreira e Posicionamento",
+    "desc": "Você constrói um positioning que comunica autoridade e diferenciação real no seu portfólio e LinkedIn. Mais visibilidade estratégica e uma ascensão como referência no seu nicho.",
+    "image": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=800"
+  }
+]
