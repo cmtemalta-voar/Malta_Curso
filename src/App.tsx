@@ -647,7 +647,6 @@ export default function App() {
                   <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-lime-400/10 border border-lime-400/20 text-lime-400 text-[10px] font-black uppercase tracking-widest">
                     TURMA NOITE
                   </div>
-                  <span className="text-xs text-neutral-500 font-mono">Local 01</span>
                 </div>
 
                 <h3 className="text-xl md:text-2xl font-serif text-white font-light mb-4">
@@ -719,7 +718,6 @@ export default function App() {
                   <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-400/10 border border-cyan-400/20 text-cyan-400 text-[10px] font-black uppercase tracking-widest">
                     TURMA TARDE
                   </div>
-                  <span className="text-xs text-neutral-500 font-mono">Local 02</span>
                 </div>
 
                 <h3 className="text-xl md:text-2xl font-serif text-white font-light mb-4">
