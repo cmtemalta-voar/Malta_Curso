@@ -348,7 +348,7 @@ export default function App() {
     const message = encodeURIComponent(
       `Olá Alexandre! Acabei de me cadastrar no site para o curso presencial "Processos Ágeis com IA" na ${locName}. Quero confirmar minha vaga!`
     );
-    window.open(`https://wa.me/5516996153442?text=${message}`, "_blank");
+    window.open(`https://wa.me/5516981263442?text=${message}`, "_blank");
   };
 
   if (showAdmin) {
@@ -506,7 +506,7 @@ export default function App() {
               </a>
               
               <a 
-                href="https://wa.me/5516996153442" 
+                href="https://wa.me/5516981263442" 
                 target="_blank" 
                 rel="noreferrer" 
                 className="bg-neutral-900/80 border border-white/10 hover:border-lime-400/20 text-white px-8 py-4 rounded-2xl text-sm font-bold tracking-wider hover:bg-neutral-900/50 transition-all text-center flex items-center justify-center gap-2"
@@ -619,169 +619,6 @@ export default function App() {
           </div>
         </div>
       </header>
-
-      {/* Locais e Turmas Disponíveis Section */}
-      <section id="locais" className="bg-neutral-900/40 border-b border-white/5 py-24 relative overflow-hidden">
-        <div className="absolute top-1/2 left-0 w-[400px] h-[400px] bg-cyan-500/5 rounded-full blur-[120px] pointer-events-none" />
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-16 max-w-3xl mx-auto">
-            <span className="text-[10px] text-lime-400 font-mono tracking-widest font-black uppercase mb-4 block">TURMAS PRESENCIAIS EM FRANCA/SP</span>
-            <h2 className="text-3xl md:text-5xl font-light font-serif text-white leading-tight">
-              Locais, Datas e <span className="italic font-normal text-lime-400">Horários</span>
-            </h2>
-            <p className="text-sm text-neutral-400 mt-4 font-light">
-              Escolha a turma que melhor se adapta à sua rotina profissional. Ambas são 100% presenciais e gratuitas, mas possuem vagas estritamente limitadas.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-            
-            {/* Local 01 Card */}
-            <div className={`p-6 sm:p-8 rounded-3xl sm:rounded-[2.5rem] border transition-all flex flex-col justify-between ${
-              selectedLoc === "sicchierolli" 
-                ? "bg-gradient-to-b from-neutral-900 to-neutral-950 border-lime-400/40 shadow-xl shadow-lime-400/5" 
-                : "bg-neutral-950/40 border-white/5 hover:border-white/10"
-            }`}>
-              <div>
-                <div className="flex items-center justify-between mb-6">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-lime-400/10 border border-lime-400/20 text-lime-400 text-[10px] font-black uppercase tracking-widest">
-                    TURMA NOITE
-                  </div>
-                </div>
-
-                <h3 className="text-xl md:text-2xl font-serif text-white font-light mb-4">
-                  Escola Sicchierolli
-                </h3>
-
-                <div className="space-y-4 text-sm mb-8">
-                  <div className="flex items-start gap-3">
-                    <Calendar className="w-5 h-5 text-lime-400 shrink-0 mt-0.5" />
-                    <div>
-                      <p className="text-xs text-neutral-400 font-mono uppercase tracking-wider">DATAS</p>
-                      <p className="font-bold text-white">De 13/07 à 05/08</p>
-                      <p className="text-xs text-neutral-400 font-sans">Aulas às Segundas, Terças e Quartas</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-3">
-                    <Clock className="w-5 h-5 text-lime-400 shrink-0 mt-0.5" />
-                    <div>
-                      <p className="text-xs text-neutral-400 font-mono uppercase tracking-wider">HORÁRIO</p>
-                      <p className="font-bold text-white">19h às 21h30</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-3">
-                    <MapPin className="w-5 h-5 text-lime-400 shrink-0 mt-0.5" />
-                    <div>
-                      <p className="text-xs text-neutral-400 font-mono uppercase tracking-wider">ENDEREÇO</p>
-                      <p className="font-bold text-white">Rua Prof. Laerte Barbosa Cintra, 929</p>
-                      <p className="text-xs text-neutral-400 font-sans">Residencial Baldassari — Franca/SP</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-3">
-                    <Award className="w-5 h-5 text-lime-400 shrink-0 mt-0.5" />
-                    <div>
-                      <p className="text-xs text-neutral-400 font-mono uppercase tracking-wider">INVESTIMENTO</p>
-                      <p className="font-bold text-lime-400">100% Gratuito</p>
-                      <p className="text-xs text-neutral-400 font-sans">Vagas estritamente limitadas!</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <a
-                href="#inscricao"
-                onClick={() => {
-                  setSelectedLoc("sicchierolli");
-                  setFormData(prev => ({ ...prev, location: "sicchierolli" }));
-                }}
-                className={`w-full py-4 rounded-xl text-xs font-black uppercase tracking-widest text-center transition-all ${
-                  selectedLoc === "sicchierolli"
-                    ? "bg-lime-400 text-neutral-950 shadow-md shadow-lime-500/10 hover:brightness-110"
-                    : "bg-neutral-900 border border-white/10 text-white hover:border-lime-400/30"
-                }`}
-              >
-                Selecionar & Inscrever nesta Turma
-              </a>
-            </div>
-
-            {/* Local 02 Card */}
-            <div className={`p-6 sm:p-8 rounded-3xl sm:rounded-[2.5rem] border transition-all flex flex-col justify-between ${
-              selectedLoc === "fatec" 
-                ? "bg-gradient-to-b from-neutral-900 to-neutral-950 border-cyan-400/40 shadow-xl shadow-cyan-400/5" 
-                : "bg-neutral-950/40 border-white/5 hover:border-white/10"
-            }`}>
-              <div>
-                <div className="flex items-center justify-between mb-6">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-400/10 border border-cyan-400/20 text-cyan-400 text-[10px] font-black uppercase tracking-widest">
-                    TURMA TARDE
-                  </div>
-                </div>
-
-                <h3 className="text-xl md:text-2xl font-serif text-white font-light mb-4">
-                  FATEC Franca
-                </h3>
-
-                <div className="space-y-4 text-sm mb-8">
-                  <div className="flex items-start gap-3">
-                    <Calendar className="w-5 h-5 text-cyan-400 shrink-0 mt-0.5" />
-                    <div>
-                      <p className="text-xs text-neutral-400 font-mono uppercase tracking-wider">DATAS</p>
-                      <p className="font-bold text-white">De 15/07 à 20/08</p>
-                      <p className="text-xs text-neutral-400 font-sans">Aulas às Quartas e Quintas</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-3">
-                    <Clock className="w-5 h-5 text-cyan-400 shrink-0 mt-0.5" />
-                    <div>
-                      <p className="text-xs text-neutral-400 font-mono uppercase tracking-wider">HORÁRIO</p>
-                      <p className="font-bold text-white">13h30 às 16h00</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-3">
-                    <MapPin className="w-5 h-5 text-cyan-400 shrink-0 mt-0.5" />
-                    <div>
-                      <p className="text-xs text-neutral-400 font-mono uppercase tracking-wider">ENDEREÇO</p>
-                      <p className="font-bold text-white">FATEC - Faculdade de Tecnologia</p>
-                      <p className="text-xs text-neutral-400 font-sans">Rua Irene Grecco, 4580, Vila Imperador — Franca/SP</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-3">
-                    <Award className="w-5 h-5 text-cyan-400 shrink-0 mt-0.5" />
-                    <div>
-                      <p className="text-xs text-neutral-400 font-mono uppercase tracking-wider">INVESTIMENTO</p>
-                      <p className="font-bold text-cyan-400">100% Gratuito</p>
-                      <p className="text-xs text-neutral-400 font-sans">Vagas estritamente limitadas!</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <a
-                href="#inscricao"
-                onClick={() => {
-                  setSelectedLoc("fatec");
-                  setFormData(prev => ({ ...prev, location: "fatec" }));
-                }}
-                className={`w-full py-4 rounded-xl text-xs font-black uppercase tracking-widest text-center transition-all ${
-                  selectedLoc === "fatec"
-                    ? "bg-cyan-400 text-neutral-950 shadow-md shadow-cyan-500/10 hover:brightness-110"
-                    : "bg-neutral-900 border border-white/10 text-white hover:border-cyan-400/30"
-                }`}
-              >
-                Selecionar & Inscrever nesta Turma
-              </a>
-            </div>
-
-          </div>
-        </div>
-      </section>
-
       {/* Target Audience / Para Quem é este Curso */}
       <section id="sobre" className="py-24 bg-neutral-950 relative">
         <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-12 gap-16 items-center">
@@ -1023,6 +860,168 @@ export default function App() {
             </div>
           )}
 
+        </div>
+      </section>
+
+      {/* Locais e Turmas Disponíveis Section */}
+      <section id="locais" className="bg-neutral-900/40 border-b border-white/5 py-24 relative overflow-hidden">
+        <div className="absolute top-1/2 left-0 w-[400px] h-[400px] bg-cyan-500/5 rounded-full blur-[120px] pointer-events-none" />
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center mb-16 max-w-3xl mx-auto">
+            <span className="text-[10px] text-lime-400 font-mono tracking-widest font-black uppercase mb-4 block">TURMAS PRESENCIAIS EM FRANCA/SP</span>
+            <h2 className="text-3xl md:text-5xl font-light font-serif text-white leading-tight">
+              Locais, Datas e <span className="italic font-normal text-lime-400">Horários</span>
+            </h2>
+            <p className="text-sm text-neutral-400 mt-4 font-light">
+              Escolha a turma que melhor se adapta à sua rotina profissional. Ambas são 100% presenciais e gratuitas, mas possuem vagas estritamente limitadas.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+            
+            {/* Local 01 Card */}
+            <div className={`p-6 sm:p-8 rounded-3xl sm:rounded-[2.5rem] border transition-all flex flex-col justify-between ${
+              selectedLoc === "sicchierolli" 
+                ? "bg-gradient-to-b from-neutral-900 to-neutral-950 border-lime-400/40 shadow-xl shadow-lime-400/5" 
+                : "bg-neutral-950/40 border-white/5 hover:border-white/10"
+            }`}>
+              <div>
+                <div className="flex items-center justify-between mb-6">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-lime-400/10 border border-lime-400/20 text-lime-400 text-[10px] font-black uppercase tracking-widest">
+                    TURMA NOITE
+                  </div>
+                </div>
+
+                <h3 className="text-xl md:text-2xl font-serif text-white font-light mb-4">
+                  Escola Sicchierolli
+                </h3>
+
+                <div className="space-y-4 text-sm mb-8">
+                  <div className="flex items-start gap-3">
+                    <Calendar className="w-5 h-5 text-lime-400 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-xs text-neutral-400 font-mono uppercase tracking-wider">DATAS</p>
+                      <p className="font-bold text-white">De 13/07 à 05/08</p>
+                      <p className="text-xs text-neutral-400 font-sans">Aulas às Segundas, Terças e Quartas</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <Clock className="w-5 h-5 text-lime-400 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-xs text-neutral-400 font-mono uppercase tracking-wider">HORÁRIO</p>
+                      <p className="font-bold text-white">19h às 21h30</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <MapPin className="w-5 h-5 text-lime-400 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-xs text-neutral-400 font-mono uppercase tracking-wider">ENDEREÇO</p>
+                      <p className="font-bold text-white">Rua Prof. Laerte Barbosa Cintra, 929</p>
+                      <p className="text-xs text-neutral-400 font-sans">Residencial Baldassari — Franca/SP</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <Award className="w-5 h-5 text-lime-400 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-xs text-neutral-400 font-mono uppercase tracking-wider">INVESTIMENTO</p>
+                      <p className="font-bold text-lime-400">100% Gratuito</p>
+                      <p className="text-xs text-neutral-400 font-sans">Vagas estritamente limitadas!</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <a
+                href="#inscricao"
+                onClick={() => {
+                  setSelectedLoc("sicchierolli");
+                  setFormData(prev => ({ ...prev, location: "sicchierolli" }));
+                }}
+                className={`w-full py-4 rounded-xl text-xs font-black uppercase tracking-widest text-center transition-all ${
+                  selectedLoc === "sicchierolli"
+                    ? "bg-lime-400 text-neutral-950 shadow-md shadow-lime-500/10 hover:brightness-110"
+                    : "bg-neutral-900 border border-white/10 text-white hover:border-lime-400/30"
+                }`}
+              >
+                Selecionar & Inscrever nesta Turma
+              </a>
+            </div>
+
+            {/* Local 02 Card */}
+            <div className={`p-6 sm:p-8 rounded-3xl sm:rounded-[2.5rem] border transition-all flex flex-col justify-between ${
+              selectedLoc === "fatec" 
+                ? "bg-gradient-to-b from-neutral-900 to-neutral-950 border-cyan-400/40 shadow-xl shadow-cyan-400/5" 
+                : "bg-neutral-950/40 border-white/5 hover:border-white/10"
+            }`}>
+              <div>
+                <div className="flex items-center justify-between mb-6">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-400/10 border border-cyan-400/20 text-cyan-400 text-[10px] font-black uppercase tracking-widest">
+                    TURMA TARDE
+                  </div>
+                </div>
+
+                <h3 className="text-xl md:text-2xl font-serif text-white font-light mb-4">
+                  FATEC Franca
+                </h3>
+
+                <div className="space-y-4 text-sm mb-8">
+                  <div className="flex items-start gap-3">
+                    <Calendar className="w-5 h-5 text-cyan-400 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-xs text-neutral-400 font-mono uppercase tracking-wider">DATAS</p>
+                      <p className="font-bold text-white">De 15/07 à 20/08</p>
+                      <p className="text-xs text-neutral-400 font-sans">Aulas às Quartas e Quintas</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <Clock className="w-5 h-5 text-cyan-400 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-xs text-neutral-400 font-mono uppercase tracking-wider">HORÁRIO</p>
+                      <p className="font-bold text-white">13h30 às 16h00</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <MapPin className="w-5 h-5 text-cyan-400 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-xs text-neutral-400 font-mono uppercase tracking-wider">ENDEREÇO</p>
+                      <p className="font-bold text-white">FATEC - Faculdade de Tecnologia</p>
+                      <p className="text-xs text-neutral-400 font-sans">Rua Irene Grecco, 4580, Vila Imperador — Franca/SP</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <Award className="w-5 h-5 text-cyan-400 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-xs text-neutral-400 font-mono uppercase tracking-wider">INVESTIMENTO</p>
+                      <p className="font-bold text-cyan-400">100% Gratuito</p>
+                      <p className="text-xs text-neutral-400 font-sans">Vagas estritamente limitadas!</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <a
+                href="#inscricao"
+                onClick={() => {
+                  setSelectedLoc("fatec");
+                  setFormData(prev => ({ ...prev, location: "fatec" }));
+                }}
+                className={`w-full py-4 rounded-xl text-xs font-black uppercase tracking-widest text-center transition-all ${
+                  selectedLoc === "fatec"
+                    ? "bg-cyan-400 text-neutral-950 shadow-md shadow-cyan-500/10 hover:brightness-110"
+                    : "bg-neutral-900 border border-white/10 text-white hover:border-cyan-400/30"
+                }`}
+              >
+                Selecionar & Inscrever nesta Turma
+              </a>
+            </div>
+
+          </div>
         </div>
       </section>
 
@@ -1291,13 +1290,13 @@ export default function App() {
 
           <div className="flex flex-col items-center md:items-end gap-3">
             <a 
-              href="https://wa.me/5516996153442" 
+              href="https://wa.me/5516981263442" 
               target="_blank" 
               rel="noreferrer" 
               className="flex items-center gap-2 px-4 py-2 bg-neutral-900 border border-white/10 hover:border-lime-400/30 text-white rounded-full text-xs font-bold transition-all"
             >
               <MessageSquare className="w-4 h-4 text-lime-400" />
-              <span>Dúvidas no WhatsApp: (16) 99615-3442</span>
+              <span>Dúvidas no WhatsApp: (16) 98126-3442</span>
             </a>
             <p className="text-center md:text-right text-neutral-500 flex flex-wrap items-center justify-center md:justify-end gap-2.5 mt-1">
               <span>© 2026 Processos Ágeis com IA. Todos os direitos reservados.</span>
@@ -1330,22 +1329,7 @@ export default function App() {
 
             <h3 className="text-2xl font-serif text-white font-light mb-4">Inscrição Iniciada!</h3>
             
-            {regSource === "supabase" ? (
-              <div className="mb-6">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-lime-400/10 border border-lime-400/20 text-lime-400 text-[10px] font-mono uppercase tracking-widest">
-                  ✨ Salvo no Supabase
-                </span>
-              </div>
-            ) : (
-              <div className="mb-6 bg-neutral-950 p-3 border border-white/5 rounded-xl">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-400/10 border border-amber-400/20 text-amber-400 text-[10px] font-mono uppercase tracking-widest">
-                  💾 Simulado (In-Memory)
-                </span>
-                <p className="text-[10px] text-neutral-500 font-sans mt-2">
-                  Configure as variáveis de ambiente <span className="font-mono text-neutral-400">SUPABASE_URL</span> e <span className="font-mono text-neutral-400">SUPABASE_ANON_KEY</span> nos segredos para salvar de verdade!
-                </p>
-              </div>
-            )}
+
             
             <p className="text-neutral-400 text-sm font-light leading-relaxed mb-8">
               Parabéns! Seus dados cadastrais foram enviados com sucesso. Agora, dê o próximo passo crucial para confirmar sua participação: clique no botão abaixo para nos enviar uma mensagem no WhatsApp e solicitar a sua avaliação básica.
