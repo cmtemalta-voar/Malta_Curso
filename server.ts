@@ -57,17 +57,18 @@ async function startServer() {
   const app = express();
   const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
-  app.use(express.json());
+  app.use(express.json({ limit: "50mb" }));
+  app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
   // API Route: Register a lead / participant
   app.post("/api/register", async (req, res) => {
     try {
-      const { name, email, whatsapp, role, location, agree } = req.body;
+      const { name, email, whatsapp, role, location, agree, cpf, address_proof } = req.body;
 
-      if (!name || !email || !whatsapp) {
+      if (!name || !email || !whatsapp || !cpf || !address_proof) {
         return res.status(400).json({ 
           success: false, 
-          message: "Os campos Nome, E-mail e WhatsApp são obrigatórios." 
+          message: "Os campos Nome, E-mail, WhatsApp, CPF e Comprovante de Endereço são obrigatórios." 
         });
       }
 
@@ -84,6 +85,8 @@ async function startServer() {
               role: role || null, 
               location, 
               agree: !!agree,
+              cpf,
+              address_proof,
               created_at: new Date().toISOString()
             }
           ])
@@ -131,7 +134,9 @@ CREATE TABLE IF NOT EXISTS registrations (
   whatsapp text not null,
   role text,
   location text,
-  agree boolean default false
+  agree boolean default false,
+  cpf text,
+  address_proof text
 );
 
 -- 2. Habilitar a inserção pública desativando o RLS (Row Level Security)
@@ -198,7 +203,9 @@ ALTER TABLE registrations DISABLE ROW LEVEL SECURITY;
           whatsapp,
           role,
           location,
-          agree
+          agree,
+          cpf,
+          address_proof
         };
         inMemoryLeads.push(newLead);
         console.log("In-memory lead added:", newLead);
@@ -277,6 +284,42 @@ ALTER TABLE registrations DISABLE ROW LEVEL SECURITY;
     } catch (err: any) {
       console.error("Error saving learning modules:", err);
       return res.status(500).json({ success: false, message: "Erro ao salvar módulos de aprendizado no servidor.", error: err.message });
+    }
+  });
+
+  // API Route: Get locations config
+  app.get("/api/locations-config", (req, res) => {
+    const filePath = path.join(process.cwd(), "locations_config.json");
+    try {
+      if (fs.existsSync(filePath)) {
+        const fileContent = fs.readFileSync(filePath, "utf-8");
+        const locations = JSON.parse(fileContent);
+        return res.json({ success: true, data: locations });
+      }
+      return res.status(404).json({ success: false, message: "Arquivo de configuração de locais não encontrado." });
+    } catch (err: any) {
+      console.error("Error reading locations config:", err);
+      return res.status(500).json({ success: false, message: "Erro ao ler configurações de locais.", error: err.message });
+    }
+  });
+
+  // API Route: Update locations config
+  app.put("/api/locations-config", (req, res) => {
+    if (!verifyAdminPassword(req)) {
+      return res.status(401).json({ success: false, message: "Não autorizado. Senha administrativa inválida." });
+    }
+    const { locations } = req.body;
+    if (!Array.isArray(locations)) {
+      return res.status(400).json({ success: false, message: "Formato de locais inválido. Deve ser um array." });
+    }
+
+    const filePath = path.join(process.cwd(), "locations_config.json");
+    try {
+      fs.writeFileSync(filePath, JSON.stringify(locations, null, 2), "utf-8");
+      return res.json({ success: true, message: "Configurações de locais salvas com sucesso!" });
+    } catch (err: any) {
+      console.error("Error saving locations config:", err);
+      return res.status(500).json({ success: false, message: "Erro ao salvar configurações de locais no servidor.", error: err.message });
     }
   });
 
@@ -425,7 +468,9 @@ CREATE TABLE IF NOT EXISTS registrations (
   whatsapp text not null,
   role text,
   location text,
-  agree boolean default false
+  agree boolean default false,
+  cpf text,
+  address_proof text
 );
 
 -- 2. Habilitar a inserção pública desativando o RLS (Row Level Security)

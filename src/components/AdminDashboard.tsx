@@ -26,7 +26,10 @@ import {
   Edit3,
   Upload,
   Image as ImageIcon,
-  RotateCcw
+  RotateCcw,
+  FileText,
+  Clock,
+  Award
 } from "lucide-react";
 
 // @ts-expect-error - local image asset configuration
@@ -59,6 +62,8 @@ interface Registration {
   role?: string;
   location: string;
   agree: boolean;
+  cpf?: string;
+  address_proof?: string;
 }
 
 interface AdminDashboardProps {
@@ -97,7 +102,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
   } | null>(null);
 
   // Learning modules management states
-  const [activeTab, setActiveTab] = useState<"leads" | "modules">("leads");
+  const [activeTab, setActiveTab] = useState<"leads" | "modules" | "locations">("leads");
   const [learningModules, setLearningModules] = useState<any[]>([]);
   const [isLoadingModules, setIsLoadingModules] = useState(false);
   const [modulesError, setModulesError] = useState("");
@@ -109,6 +114,30 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [imageUploadError, setImageUploadError] = useState("");
   const [isSavingModules, setIsSavingModules] = useState(false);
+
+  // Locations management states
+  const [locations, setLocations] = useState<any[]>([]);
+  const [isLoadingLocations, setIsLoadingLocations] = useState(false);
+  const [locationsError, setLocationsError] = useState("");
+  const [editingLocation, setEditingLocation] = useState<any | null>(null);
+
+  // Temp fields for editing location
+  const [tempLocBadge, setTempLocBadge] = useState("");
+  const [tempLocTitle, setTempLocTitle] = useState("");
+  const [tempLocDatesTitle, setTempLocDatesTitle] = useState("");
+  const [tempLocDates, setTempLocDates] = useState("");
+  const [tempLocDatesSub, setTempLocDatesSub] = useState("");
+  const [tempLocHoursTitle, setTempLocHoursTitle] = useState("");
+  const [tempLocHours, setTempLocHours] = useState("");
+  const [tempLocAddressTitle, setTempLocAddressTitle] = useState("");
+  const [tempLocAddress, setTempLocAddress] = useState("");
+  const [tempLocAddressSub, setTempLocAddressSub] = useState("");
+  const [tempLocInvestmentTitle, setTempLocInvestmentTitle] = useState("");
+  const [tempLocInvestment, setTempLocInvestment] = useState("");
+  const [tempLocInvestmentSub, setTempLocInvestmentSub] = useState("");
+  const [tempLocButtonText, setTempLocButtonText] = useState("");
+
+  const [isSavingLocations, setIsSavingLocations] = useState(false);
 
   const fetchLearningModules = async () => {
     setIsLoadingModules(true);
@@ -126,6 +155,94 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
       setModulesError("Erro ao se conectar ao servidor para buscar módulos de aprendizado.");
     } finally {
       setIsLoadingModules(false);
+    }
+  };
+
+  const fetchLocationsConfig = async () => {
+    setIsLoadingLocations(true);
+    setLocationsError("");
+    try {
+      const res = await fetch("/api/locations-config");
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setLocations(data.data || []);
+      } else {
+        setLocationsError(data.message || "Erro ao carregar as configurações de locais.");
+      }
+    } catch (err: any) {
+      console.error("Error fetching locations config:", err);
+      setLocationsError("Erro ao se conectar ao servidor para buscar configurações de locais.");
+    } finally {
+      setIsLoadingLocations(false);
+    }
+  };
+
+  const handleEditLocationClick = (loc: any) => {
+    setEditingLocation(loc);
+    setTempLocBadge(loc.badge || "");
+    setTempLocTitle(loc.title || "");
+    setTempLocDatesTitle(loc.datesTitle || "DATAS");
+    setTempLocDates(loc.dates || "");
+    setTempLocDatesSub(loc.datesSub || "");
+    setTempLocHoursTitle(loc.hoursTitle || "HORÁRIO");
+    setTempLocHours(loc.hours || "");
+    setTempLocAddressTitle(loc.addressTitle || "ENDEREÇO");
+    setTempLocAddress(loc.address || "");
+    setTempLocAddressSub(loc.addressSub || "");
+    setTempLocInvestmentTitle(loc.investmentTitle || "INVESTIMENTO");
+    setTempLocInvestment(loc.investment || "");
+    setTempLocInvestmentSub(loc.investmentSub || "");
+    setTempLocButtonText(loc.buttonText || "");
+  };
+
+  const handleSaveLocation = async () => {
+    if (!editingLocation) return;
+    setIsSavingLocations(true);
+    
+    const updatedLocations = locations.map((loc: any) => {
+      if (loc.id === editingLocation.id) {
+        return {
+          ...loc,
+          badge: tempLocBadge,
+          title: tempLocTitle,
+          datesTitle: tempLocDatesTitle,
+          dates: tempLocDates,
+          datesSub: tempLocDatesSub,
+          hoursTitle: tempLocHoursTitle,
+          hours: tempLocHours,
+          addressTitle: tempLocAddressTitle,
+          address: tempLocAddress,
+          addressSub: tempLocAddressSub,
+          investmentTitle: tempLocInvestmentTitle,
+          investment: tempLocInvestment,
+          investmentSub: tempLocInvestmentSub,
+          buttonText: tempLocButtonText
+        };
+      }
+      return loc;
+    });
+
+    try {
+      const res = await fetch("/api/locations-config", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-password": password
+        },
+        body: JSON.stringify({ locations: updatedLocations })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setLocations(updatedLocations);
+        setEditingLocation(null);
+      } else {
+        alert("Erro ao salvar: " + (data.message || "Por favor, tente novamente."));
+      }
+    } catch (err: any) {
+      console.error("Error updating location:", err);
+      alert("Erro ao conectar ao servidor para salvar.");
+    } finally {
+      setIsSavingLocations(false);
     }
   };
 
@@ -209,6 +326,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
   useEffect(() => {
     if (isLoggedIn) {
       fetchLearningModules();
+      fetchLocationsConfig();
     }
   }, [isLoggedIn]);
 
@@ -371,11 +489,12 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
       return;
     }
 
-    const headers = ["ID", "Data Cadastro", "Nome", "E-mail", "WhatsApp", "Cargo", "Local", "Termos Aceitos"];
+    const headers = ["ID", "Data Cadastro", "Nome", "CPF", "E-mail", "WhatsApp", "Cargo", "Local", "Termos Aceitos"];
     const rows = filteredRegistrations.map(reg => [
       reg.id,
       formatDate(reg.created_at),
       `"${reg.name.replace(/"/g, '""')}"`,
+      `"${(reg.cpf || '').replace(/"/g, '""')}"`,
       `"${reg.email.replace(/"/g, '""')}"`,
       `"${reg.whatsapp.replace(/"/g, '""')}"`,
       `"${(reg.role || '').replace(/"/g, '""')}"`,
@@ -406,7 +525,8 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
     const matchesSearch = 
       reg.name.toLowerCase().includes(query) ||
       reg.email.toLowerCase().includes(query) ||
-      reg.whatsapp.includes(query);
+      reg.whatsapp.includes(query) ||
+      (reg.cpf && reg.cpf.toLowerCase().includes(query));
 
     const matchesLocation = 
       locationFilter === "all" || reg.location === locationFilter;
@@ -610,6 +730,22 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
               />
             )}
           </button>
+          <button
+            onClick={() => setActiveTab("locations")}
+            className={`pb-4 text-sm font-black uppercase tracking-wider transition-all relative cursor-pointer ${
+              activeTab === "locations" 
+                ? "text-lime-400" 
+                : "text-neutral-500 hover:text-neutral-300"
+            }`}
+          >
+            <span>Turmas & Locais</span>
+            {activeTab === "locations" && (
+              <motion.div 
+                layoutId="activeTabUnderline" 
+                className="absolute bottom-0 left-0 right-0 h-0.5 bg-lime-400"
+              />
+            )}
+          </button>
         </div>
 
         {activeTab === "leads" && (
@@ -756,9 +892,10 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
                   <thead>
                     <tr className="border-b border-white/5 bg-neutral-900/30 text-[10px] font-mono tracking-widest text-neutral-400 uppercase font-bold">
                       <th className="py-5 px-6">Inscrito</th>
-                      <th className="py-5 px-6">Contato</th>
+                      <th className="py-5 px-6">Contato / CPF</th>
                       <th className="py-5 px-6">Cargo / Profissão</th>
                       <th className="py-5 px-6">Local / Turma</th>
+                      <th className="py-5 px-6">Comprovante de Endereço</th>
                       <th className="py-5 px-6">Data Cadastro</th>
                       <th className="py-5 px-6 text-right">Ações</th>
                     </tr>
@@ -782,6 +919,9 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
                             <div className="h-4 bg-white/5 rounded-md w-28" />
                           </td>
                           <td className="py-5 px-6">
+                            <div className="h-6 bg-white/5 rounded-lg w-24" />
+                          </td>
+                          <td className="py-5 px-6">
                             <div className="h-3 bg-white/5 rounded-md w-24" />
                           </td>
                           <td className="py-5 px-6 text-right">
@@ -791,7 +931,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
                       ))
                     ) : filteredRegistrations.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="py-16 text-center text-neutral-500 font-light">
+                        <td colSpan={7} className="py-16 text-center text-neutral-500 font-light">
                           <div className="max-w-md mx-auto space-y-3">
                             <div className="w-12 h-12 rounded-full bg-neutral-900 border border-white/5 flex items-center justify-center mx-auto text-neutral-400">
                               <Search className="w-5 h-5" />
@@ -829,6 +969,12 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
                                 <Phone className="w-3.5 h-3.5 text-neutral-500" />
                                 <span>{reg.whatsapp}</span>
                               </div>
+                              {reg.cpf && (
+                                <div className="text-[10px] text-neutral-500 font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 pt-0.5">
+                                  <span className="px-1.5 py-0.5 bg-neutral-900 border border-white/5 rounded text-[9px]">CPF</span>
+                                  <span>{reg.cpf}</span>
+                                </div>
+                              )}
                             </div>
                           </td>
                           <td className="py-5 px-6">
@@ -858,6 +1004,24 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
                                 </p>
                                 <p className="text-[10px] text-neutral-400 font-mono">QUA/QUI • 13h30 às 16h00</p>
                               </div>
+                            )}
+                          </td>
+                          <td className="py-5 px-6">
+                            {reg.address_proof ? (
+                              <a
+                                href={reg.address_proof}
+                                download={`comprovante_${reg.name.toLowerCase().replace(/\s+/g, "_")}`}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-lime-400/10 border border-lime-400/20 hover:border-lime-400 hover:bg-lime-400 text-lime-400 hover:text-neutral-950 text-[10px] font-bold uppercase tracking-wider transition-all"
+                              >
+                                {reg.address_proof.startsWith("data:application/pdf") ? (
+                                  <FileText className="w-3.5 h-3.5" />
+                                ) : (
+                                  <ImageIcon className="w-3.5 h-3.5" />
+                                )}
+                                <span>Baixar Doc</span>
+                              </a>
+                            ) : (
+                              <span className="text-neutral-600 font-light italic">Não enviado</span>
                             )}
                           </td>
                           <td className="py-5 px-6">
@@ -1088,6 +1252,120 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
           </div>
         )}
 
+        {activeTab === "locations" && (
+          <div className="space-y-8 animate-fadeIn">
+            {/* Header of Section */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-neutral-900/30 border border-white/5 rounded-3xl p-6 md:p-8">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-lime-400" />
+                  <h3 className="text-xl font-bold text-white uppercase tracking-wider">Turmas e Locais</h3>
+                </div>
+                <p className="text-xs text-neutral-400 font-light max-w-2xl leading-relaxed">
+                  Gerencie todas as turmas e locais presenciais. Altere livremente as etiquetas, títulos, datas, horários, endereços, textos de investimento e o botão de inscrição de cada card.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={fetchLocationsConfig}
+                disabled={isLoadingLocations}
+                className="shrink-0 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-white text-xs font-bold font-mono uppercase tracking-wider border border-white/10 active:scale-95 transition-all cursor-pointer disabled:opacity-50"
+              >
+                <RefreshCw className={`w-4 h-4 ${isLoadingLocations ? "animate-spin text-lime-400" : "text-neutral-400"}`} />
+                Recarregar Configurações
+              </button>
+            </div>
+
+            {locationsError && (
+              <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-400 text-sm rounded-2xl flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+                <span>{locationsError}</span>
+              </div>
+            )}
+
+            {isLoadingLocations ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+                {Array.from({ length: 2 }).map((_, idx) => (
+                  <div key={idx} className="bg-[#0b0f19]/40 border border-white/5 rounded-[2rem] p-8 h-[500px] animate-pulse space-y-4" />
+                ))}
+              </div>
+            ) : (
+              <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+                {locations.map((loc: any) => (
+                  <div 
+                    key={loc.id} 
+                    className="p-6 sm:p-8 rounded-3xl sm:rounded-[2.5rem] border bg-gradient-to-b from-neutral-900 to-neutral-950 border-white/5 shadow-xl flex flex-col justify-between"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-6">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-lime-400/10 border border-lime-400/20 text-lime-400 text-[10px] font-black uppercase tracking-widest">
+                          {loc.badge}
+                        </div>
+                      </div>
+
+                      <h3 className="text-xl md:text-2xl font-serif text-white font-light mb-4">
+                        {loc.title}
+                      </h3>
+
+                      <div className="space-y-4 text-sm mb-8 font-light">
+                        <div className="flex items-start gap-3">
+                          <Calendar className="w-5 h-5 text-lime-400 shrink-0 mt-0.5" />
+                          <div>
+                            <p className="text-xs text-neutral-400 font-mono uppercase tracking-wider">{loc.datesTitle}</p>
+                            <p className="font-bold text-white">{loc.dates}</p>
+                            <p className="text-xs text-neutral-400 font-sans">{loc.datesSub}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-start gap-3">
+                          <Clock className="w-5 h-5 text-lime-400 shrink-0 mt-0.5" />
+                          <div>
+                            <p className="text-xs text-neutral-400 font-mono uppercase tracking-wider">{loc.hoursTitle}</p>
+                            <p className="font-bold text-white">{loc.hours}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-start gap-3">
+                          <MapPin className="w-5 h-5 text-lime-400 shrink-0 mt-0.5" />
+                          <div>
+                            <p className="text-xs text-neutral-400 font-mono uppercase tracking-wider">{loc.addressTitle}</p>
+                            <p className="font-bold text-white">{loc.address}</p>
+                            <p className="text-xs text-neutral-400 font-sans">{loc.addressSub}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-start gap-3">
+                          <Award className="w-5 h-5 text-lime-400 shrink-0 mt-0.5" />
+                          <div>
+                            <p className="text-xs text-neutral-400 font-mono uppercase tracking-wider">{loc.investmentTitle}</p>
+                            <p className="font-bold text-lime-400">{loc.investment}</p>
+                            <p className="text-xs text-neutral-400 font-sans">{loc.investmentSub}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div className="text-center py-3 rounded-xl text-xs font-black uppercase tracking-widest bg-neutral-900 border border-white/10 text-white/50 select-none">
+                        {loc.buttonText}
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleEditLocationClick(loc)}
+                        className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-lime-400 text-neutral-950 hover:bg-lime-300 font-black text-xs uppercase tracking-widest transition-all duration-200 active:scale-95 cursor-pointer"
+                      >
+                        <Edit3 className="w-4 h-4" />
+                        <span>Editar Campos do Card</span>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
       </main>
 
       {/* Learning Module Edit Modal */}
@@ -1257,6 +1535,239 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
                 className="flex-1 bg-gradient-to-r from-lime-400 to-lime-500 text-neutral-950 px-4 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:brightness-110 disabled:opacity-50 active:scale-98 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 {isSavingModules ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    <span>Salvando...</span>
+                  </>
+                ) : (
+                  <>
+                    <Check className="w-4 h-4" />
+                    <span>Salvar</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Location Edit Modal */}
+      {editingLocation && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4 overflow-y-auto py-10">
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setEditingLocation(null)} />
+          <motion.div
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="bg-neutral-900 border border-white/10 p-6 md:p-8 rounded-[2.5rem] max-w-xl w-full relative z-10 shadow-2xl space-y-6"
+          >
+            <button
+              onClick={() => setEditingLocation(null)}
+              className="absolute top-6 right-6 text-neutral-400 hover:text-white transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-lime-400" />
+              <h3 className="text-lg font-black font-sans uppercase tracking-wider text-white">
+                Editar Turma — {editingLocation.title}
+              </h3>
+            </div>
+
+            <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-white/10">
+              {/* Badge & Title */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[10px] font-mono font-bold tracking-widest text-neutral-400 uppercase block mb-1.5">
+                    Etiqueta / Badge
+                  </label>
+                  <input
+                    type="text"
+                    value={tempLocBadge}
+                    onChange={(e) => setTempLocBadge(e.target.value)}
+                    placeholder="Ex: TURMA NOITE"
+                    className="w-full bg-neutral-950 border border-white/10 focus:border-lime-400 rounded-xl py-3 px-4 text-xs text-white focus:outline-none transition-all font-sans"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-mono font-bold tracking-widest text-neutral-400 uppercase block mb-1.5">
+                    Nome do Local
+                  </label>
+                  <input
+                    type="text"
+                    value={tempLocTitle}
+                    onChange={(e) => setTempLocTitle(e.target.value)}
+                    placeholder="Ex: Escola Sicchierolli"
+                    className="w-full bg-neutral-950 border border-white/10 focus:border-lime-400 rounded-xl py-3 px-4 text-xs text-white focus:outline-none transition-all font-sans font-bold"
+                  />
+                </div>
+              </div>
+
+              {/* Dates section */}
+              <div className="p-4 bg-neutral-950/40 rounded-2xl border border-white/5 space-y-3">
+                <span className="text-[9px] font-mono font-bold text-lime-400 uppercase tracking-widest block">Seção de Datas</span>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="col-span-1">
+                    <label className="text-[9px] font-mono font-bold text-neutral-500 uppercase block mb-1">Título do Campo</label>
+                    <input
+                      type="text"
+                      value={tempLocDatesTitle}
+                      onChange={(e) => setTempLocDatesTitle(e.target.value)}
+                      className="w-full bg-neutral-950 border border-white/10 focus:border-lime-400 rounded-xl py-2 px-3 text-[11px] text-white focus:outline-none transition-all font-mono"
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <label className="text-[9px] font-mono font-bold text-neutral-500 uppercase block mb-1">Datas Ativas</label>
+                    <input
+                      type="text"
+                      value={tempLocDates}
+                      onChange={(e) => setTempLocDates(e.target.value)}
+                      placeholder="Ex: De 13/07 à 05/08"
+                      className="w-full bg-neutral-950 border border-white/10 focus:border-lime-400 rounded-xl py-2 px-3 text-[11px] text-white focus:outline-none transition-all font-sans"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-[9px] font-mono font-bold text-neutral-500 uppercase block mb-1">Frequência das Aulas (Subtítulo)</label>
+                  <input
+                    type="text"
+                    value={tempLocDatesSub}
+                    onChange={(e) => setTempLocDatesSub(e.target.value)}
+                    placeholder="Ex: Aulas às Segundas, Terças e Quartas"
+                    className="w-full bg-neutral-950 border border-white/10 focus:border-lime-400 rounded-xl py-2 px-3 text-[11px] text-white focus:outline-none transition-all font-sans"
+                  />
+                </div>
+              </div>
+
+              {/* Hours section */}
+              <div className="p-4 bg-neutral-950/40 rounded-2xl border border-white/5 space-y-3">
+                <span className="text-[9px] font-mono font-bold text-lime-400 uppercase tracking-widest block">Seção de Horários</span>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="col-span-1">
+                    <label className="text-[9px] font-mono font-bold text-neutral-500 uppercase block mb-1">Título do Campo</label>
+                    <input
+                      type="text"
+                      value={tempLocHoursTitle}
+                      onChange={(e) => setTempLocHoursTitle(e.target.value)}
+                      className="w-full bg-neutral-950 border border-white/10 focus:border-lime-400 rounded-xl py-2 px-3 text-[11px] text-white focus:outline-none transition-all font-mono"
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <label className="text-[9px] font-mono font-bold text-neutral-500 uppercase block mb-1">Horário das Aulas</label>
+                    <input
+                      type="text"
+                      value={tempLocHours}
+                      onChange={(e) => setTempLocHours(e.target.value)}
+                      placeholder="Ex: 19h às 21h30"
+                      className="w-full bg-neutral-950 border border-white/10 focus:border-lime-400 rounded-xl py-2 px-3 text-[11px] text-white focus:outline-none transition-all font-sans"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Address section */}
+              <div className="p-4 bg-neutral-950/40 rounded-2xl border border-white/5 space-y-3">
+                <span className="text-[9px] font-mono font-bold text-lime-400 uppercase tracking-widest block">Seção de Endereço</span>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="col-span-1">
+                    <label className="text-[9px] font-mono font-bold text-neutral-500 uppercase block mb-1">Título do Campo</label>
+                    <input
+                      type="text"
+                      value={tempLocAddressTitle}
+                      onChange={(e) => setTempLocAddressTitle(e.target.value)}
+                      className="w-full bg-neutral-950 border border-white/10 focus:border-lime-400 rounded-xl py-2 px-3 text-[11px] text-white focus:outline-none transition-all font-mono"
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <label className="text-[9px] font-mono font-bold text-neutral-500 uppercase block mb-1">Rua / Prédio (Principal)</label>
+                    <input
+                      type="text"
+                      value={tempLocAddress}
+                      onChange={(e) => setTempLocAddress(e.target.value)}
+                      placeholder="Ex: Rua Prof. Laerte Barbosa Cintra, 929"
+                      className="w-full bg-neutral-950 border border-white/10 focus:border-lime-400 rounded-xl py-2 px-3 text-[11px] text-white focus:outline-none transition-all font-sans"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-[9px] font-mono font-bold text-neutral-500 uppercase block mb-1">Bairro / Cidade (Subtítulo)</label>
+                  <input
+                    type="text"
+                    value={tempLocAddressSub}
+                    onChange={(e) => setTempLocAddressSub(e.target.value)}
+                    placeholder="Ex: Residencial Baldassari — Franca/SP"
+                    className="w-full bg-neutral-950 border border-white/10 focus:border-lime-400 rounded-xl py-2 px-3 text-[11px] text-white focus:outline-none transition-all font-sans"
+                  />
+                </div>
+              </div>
+
+              {/* Investment section */}
+              <div className="p-4 bg-neutral-950/40 rounded-2xl border border-white/5 space-y-3">
+                <span className="text-[9px] font-mono font-bold text-lime-400 uppercase tracking-widest block">Seção de Investimento</span>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="col-span-1">
+                    <label className="text-[9px] font-mono font-bold text-neutral-500 uppercase block mb-1">Título do Campo</label>
+                    <input
+                      type="text"
+                      value={tempLocInvestmentTitle}
+                      onChange={(e) => setTempLocInvestmentTitle(e.target.value)}
+                      className="w-full bg-neutral-950 border border-white/10 focus:border-lime-400 rounded-xl py-2 px-3 text-[11px] text-white focus:outline-none transition-all font-mono"
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <label className="text-[9px] font-mono font-bold text-neutral-500 uppercase block mb-1">Investimento</label>
+                    <input
+                      type="text"
+                      value={tempLocInvestment}
+                      onChange={(e) => setTempLocInvestment(e.target.value)}
+                      placeholder="Ex: 100% Gratuito"
+                      className="w-full bg-neutral-950 border border-white/10 focus:border-lime-400 rounded-xl py-2 px-3 text-[11px] text-white focus:outline-none transition-all font-sans"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-[9px] font-mono font-bold text-neutral-500 uppercase block mb-1">Vagas / Observação (Subtítulo)</label>
+                  <input
+                    type="text"
+                    value={tempLocInvestmentSub}
+                    onChange={(e) => setTempLocInvestmentSub(e.target.value)}
+                    placeholder="Ex: Vagas estritamente limitadas!"
+                    className="w-full bg-neutral-950 border border-white/10 focus:border-lime-400 rounded-xl py-2 px-3 text-[11px] text-white focus:outline-none transition-all font-sans"
+                  />
+                </div>
+              </div>
+
+              {/* Button Action text */}
+              <div>
+                <label className="text-[10px] font-mono font-bold tracking-widest text-neutral-400 uppercase block mb-1.5">
+                  Texto do Botão de Inscrição
+                </label>
+                <input
+                  type="text"
+                  value={tempLocButtonText}
+                  onChange={(e) => setTempLocButtonText(e.target.value)}
+                  placeholder="Ex: Selecionar & Inscrever nesta Turma"
+                  className="w-full bg-neutral-950 border border-white/10 focus:border-lime-400 rounded-xl py-3 px-4 text-xs text-white focus:outline-none transition-all font-sans"
+                />
+              </div>
+            </div>
+
+            {/* Actions Footer */}
+            <div className="flex gap-3 pt-4 border-t border-white/5">
+              <button
+                type="button"
+                onClick={() => setEditingLocation(null)}
+                className="flex-1 px-4 py-3 rounded-xl border border-white/5 bg-neutral-850 hover:bg-neutral-800 text-xs font-bold text-white font-mono uppercase tracking-wider transition-all cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveLocation}
+                disabled={isSavingLocations}
+                className="flex-1 bg-gradient-to-r from-lime-400 to-lime-500 text-neutral-950 px-4 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:brightness-110 disabled:opacity-50 active:scale-98 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                {isSavingLocations ? (
                   <>
                     <RefreshCw className="w-4 h-4 animate-spin" />
                     <span>Salvando...</span>

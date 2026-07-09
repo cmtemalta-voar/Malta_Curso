@@ -35,7 +35,8 @@ import {
   Menu,
   RotateCcw,
   Upload,
-  Image as ImageIcon
+  Image as ImageIcon,
+  FileText
 } from "lucide-react";
 import React, { useState } from "react";
 import AdminDashboard from "./components/AdminDashboard";
@@ -124,6 +125,61 @@ interface CarouselModule {
   desc: string;
   image: string;
 }
+
+export interface LocationConfig {
+  id: string;
+  badge: string;
+  title: string;
+  datesTitle: string;
+  dates: string;
+  datesSub: string;
+  hoursTitle: string;
+  hours: string;
+  addressTitle: string;
+  address: string;
+  addressSub: string;
+  investmentTitle: string;
+  investment: string;
+  investmentSub: string;
+  buttonText: string;
+}
+
+export const DEFAULT_LOCATIONS_CONFIG: LocationConfig[] = [
+  {
+    id: "sicchierolli",
+    badge: "TURMA NOITE",
+    title: "Escola Sicchierolli",
+    datesTitle: "DATAS",
+    dates: "De 13/07 à 05/08",
+    datesSub: "Aulas às Segundas, Terças e Quartas",
+    hoursTitle: "HORÁRIO",
+    hours: "19h às 21h30",
+    addressTitle: "ENDEREÇO",
+    address: "Rua Prof. Laerte Barbosa Cintra, 929",
+    addressSub: "Residencial Baldassari — Franca/SP",
+    investmentTitle: "INVESTIMENTO",
+    investment: "100% Gratuito",
+    investmentSub: "Vagas estritamente limitadas!",
+    buttonText: "Selecionar & Inscrever nesta Turma"
+  },
+  {
+    id: "fatec",
+    badge: "TURMA TARDE",
+    title: "FATEC Franca",
+    datesTitle: "DATAS",
+    dates: "De 15/07 à 20/08",
+    datesSub: "Aulas às Quartas e Quintas",
+    hoursTitle: "HORÁRIO",
+    hours: "13h30 às 16h00",
+    addressTitle: "ENDEREÇO",
+    address: "FATEC - Faculdade de Tecnologia",
+    addressSub: "Rua Irene Grecco, 4580, Vila Imperador — Franca/SP",
+    investmentTitle: "INVESTIMENTO",
+    investment: "100% Gratuito",
+    investmentSub: "Vagas estritamente limitadas!",
+    buttonText: "Selecionar & Inscrever nesta Turma"
+  }
+];
 
 // --- Content Data ---
 const imageMap: Record<string, string> = {
@@ -233,10 +289,50 @@ export default function App() {
     whatsapp: "",
     role: "",
     location: "sicchierolli",
-    agree: false
+    agree: false,
+    cpf: "",
+    address_proof: ""
   });
+  const [fileName, setFileName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+
+  const formatCPF = (value: string) => {
+    const digits = value.replace(/\D/g, "");
+    if (digits.length <= 3) return digits;
+    if (digits.length <= 6) return `${digits.slice(0, 3)}.${digits.slice(3)}`;
+    if (digits.length <= 9) return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
+    return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9, 11)}`;
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert("O arquivo é muito grande. O tamanho máximo permitido é 5MB.");
+      return;
+    }
+
+    try {
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = error => reject(error);
+      });
+      setFileName(file.name);
+      setFormData(prev => ({ ...prev, address_proof: base64 }));
+    } catch (err) {
+      console.error("Erro ao ler o arquivo:", err);
+      alert("Erro ao processar o arquivo. Tente novamente.");
+    }
+  };
+
+  const handleRemoveFile = () => {
+    setFileName("");
+    setFormData(prev => ({ ...prev, address_proof: "" }));
+  };
   const [activeModule, setActiveModule] = useState<string | null>("m1");
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -244,6 +340,10 @@ export default function App() {
   // Carousel curriculum states loaded dynamically from server
   const [modules, setModules] = useState<CarouselModule[]>(CAROUSEL_MODULES);
   const [isLoadingModules, setIsLoadingModules] = useState(true);
+
+  // Locations states loaded dynamically from server
+  const [locationsConfig, setLocationsConfig] = useState<LocationConfig[]>(DEFAULT_LOCATIONS_CONFIG);
+  const [isLoadingLocations, setIsLoadingLocations] = useState(true);
 
   const fetchModules = async () => {
     setIsLoadingModules(true);
@@ -263,8 +363,27 @@ export default function App() {
     }
   };
 
+  const fetchLocationsConfig = async () => {
+    setIsLoadingLocations(true);
+    try {
+      const res = await fetch("/api/locations-config");
+      const data = await res.json();
+      if (res.ok && data.success && data.data) {
+        setLocationsConfig(data.data);
+      } else {
+        setLocationsConfig(DEFAULT_LOCATIONS_CONFIG);
+      }
+    } catch (e) {
+      console.error("Error loading dynamic locations config:", e);
+      setLocationsConfig(DEFAULT_LOCATIONS_CONFIG);
+    } finally {
+      setIsLoadingLocations(false);
+    }
+  };
+
   React.useEffect(() => {
     fetchModules();
+    fetchLocationsConfig();
   }, []);
 
   const [currentPage, setCurrentPage] = useState(0);
@@ -292,7 +411,10 @@ export default function App() {
 
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
+    let { name, value } = e.target;
+    if (name === "cpf") {
+      value = formatCPF(value);
+    }
     setFormData(prev => ({ ...prev, [name]: value }));
     if (name === "location") {
       setSelectedLoc(value);
@@ -305,8 +427,8 @@ export default function App() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.email || !formData.whatsapp || !formData.agree) {
-      alert("Por favor, preencha todos os campos obrigatórios e aceite os termos.");
+    if (!formData.name || !formData.email || !formData.whatsapp || !formData.cpf || !formData.address_proof || !formData.agree) {
+      alert("Por favor, preencha todos os campos obrigatórios (incluindo CPF e Comprovante de Endereço) e aceite os termos.");
       return;
     }
     
@@ -867,161 +989,169 @@ export default function App() {
       <section id="locais" className="bg-neutral-900/40 border-b border-white/5 py-24 relative overflow-hidden">
         <div className="absolute top-1/2 left-0 w-[400px] h-[400px] bg-cyan-500/5 rounded-full blur-[120px] pointer-events-none" />
         <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-16 max-w-3xl mx-auto">
-            <span className="text-[10px] text-lime-400 font-mono tracking-widest font-black uppercase mb-4 block">TURMAS PRESENCIAIS EM FRANCA/SP</span>
-            <h2 className="text-3xl md:text-5xl font-light font-serif text-white leading-tight">
-              Locais, Datas e <span className="italic font-normal text-lime-400">Horários</span>
-            </h2>
-            <p className="text-sm text-neutral-400 mt-4 font-light">
-              Escolha a turma que melhor se adapta à sua rotina profissional. Ambas são 100% presenciais e gratuitas, mas possuem vagas estritamente limitadas.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-            
-            {/* Local 01 Card */}
-            <div className={`p-6 sm:p-8 rounded-3xl sm:rounded-[2.5rem] border transition-all flex flex-col justify-between ${
-              selectedLoc === "sicchierolli" 
-                ? "bg-gradient-to-b from-neutral-900 to-neutral-950 border-lime-400/40 shadow-xl shadow-lime-400/5" 
-                : "bg-neutral-950/40 border-white/5 hover:border-white/10"
-            }`}>
-              <div>
-                <div className="flex items-center justify-between mb-6">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-lime-400/10 border border-lime-400/20 text-lime-400 text-[10px] font-black uppercase tracking-widest">
-                    TURMA NOITE
-                  </div>
+          {(() => {
+            const sicchierolliConfig = locationsConfig.find(l => l.id === "sicchierolli") || DEFAULT_LOCATIONS_CONFIG[0];
+            const fatecConfig = locationsConfig.find(l => l.id === "fatec") || DEFAULT_LOCATIONS_CONFIG[1];
+            return (
+              <>
+                <div className="text-center mb-16 max-w-3xl mx-auto">
+                  <span className="text-[10px] text-lime-400 font-mono tracking-widest font-black uppercase mb-4 block">TURMAS PRESENCIAIS EM FRANCA/SP</span>
+                  <h2 className="text-3xl md:text-5xl font-light font-serif text-white leading-tight">
+                    Locais, Datas e <span className="italic font-normal text-lime-400">Horários</span>
+                  </h2>
+                  <p className="text-sm text-neutral-400 mt-4 font-light">
+                    Escolha a turma que melhor se adapta à sua rotina profissional. Ambas são 100% presenciais e gratuitas, mas possuem vagas estritamente limitadas.
+                  </p>
                 </div>
 
-                <h3 className="text-xl md:text-2xl font-serif text-white font-light mb-4">
-                  Escola Sicchierolli
-                </h3>
-
-                <div className="space-y-4 text-sm mb-8">
-                  <div className="flex items-start gap-3">
-                    <Calendar className="w-5 h-5 text-lime-400 shrink-0 mt-0.5" />
+                <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+                  
+                  {/* Local 01 Card */}
+                  <div className={`p-6 sm:p-8 rounded-3xl sm:rounded-[2.5rem] border transition-all flex flex-col justify-between ${
+                    selectedLoc === "sicchierolli" 
+                      ? "bg-gradient-to-b from-neutral-900 to-neutral-950 border-lime-400/40 shadow-xl shadow-lime-400/5" 
+                      : "bg-neutral-950/40 border-white/5 hover:border-white/10"
+                  }`}>
                     <div>
-                      <p className="text-xs text-neutral-400 font-mono uppercase tracking-wider">DATAS</p>
-                      <p className="font-bold text-white">De 13/07 à 05/08</p>
-                      <p className="text-xs text-neutral-400 font-sans">Aulas às Segundas, Terças e Quartas</p>
+                      <div className="flex items-center justify-between mb-6">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-lime-400/10 border border-lime-400/20 text-lime-400 text-[10px] font-black uppercase tracking-widest">
+                          {sicchierolliConfig.badge}
+                        </div>
+                      </div>
+
+                      <h3 className="text-xl md:text-2xl font-serif text-white font-light mb-4">
+                        {sicchierolliConfig.title}
+                      </h3>
+
+                      <div className="space-y-4 text-sm mb-8">
+                        <div className="flex items-start gap-3">
+                          <Calendar className="w-5 h-5 text-lime-400 shrink-0 mt-0.5" />
+                          <div>
+                            <p className="text-xs text-neutral-400 font-mono uppercase tracking-wider">{sicchierolliConfig.datesTitle}</p>
+                            <p className="font-bold text-white">{sicchierolliConfig.dates}</p>
+                            <p className="text-xs text-neutral-400 font-sans">{sicchierolliConfig.datesSub}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-start gap-3">
+                          <Clock className="w-5 h-5 text-lime-400 shrink-0 mt-0.5" />
+                          <div>
+                            <p className="text-xs text-neutral-400 font-mono uppercase tracking-wider">{sicchierolliConfig.hoursTitle}</p>
+                            <p className="font-bold text-white">{sicchierolliConfig.hours}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-start gap-3">
+                          <MapPin className="w-5 h-5 text-lime-400 shrink-0 mt-0.5" />
+                          <div>
+                            <p className="text-xs text-neutral-400 font-mono uppercase tracking-wider">{sicchierolliConfig.addressTitle}</p>
+                            <p className="font-bold text-white">{sicchierolliConfig.address}</p>
+                            <p className="text-xs text-neutral-400 font-sans">{sicchierolliConfig.addressSub}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-start gap-3">
+                          <Award className="w-5 h-5 text-lime-400 shrink-0 mt-0.5" />
+                          <div>
+                            <p className="text-xs text-neutral-400 font-mono uppercase tracking-wider">{sicchierolliConfig.investmentTitle}</p>
+                            <p className="font-bold text-lime-400">{sicchierolliConfig.investment}</p>
+                            <p className="text-xs text-neutral-400 font-sans">{sicchierolliConfig.investmentSub}</p>
+                          </div>
+                        </div>
+                      </div>
                     </div>
+
+                    <a
+                      href="#inscricao"
+                      onClick={() => {
+                        setSelectedLoc("sicchierolli");
+                        setFormData(prev => ({ ...prev, location: "sicchierolli" }));
+                      }}
+                      className={`w-full py-4 rounded-xl text-xs font-black uppercase tracking-widest text-center transition-all ${
+                        selectedLoc === "sicchierolli"
+                          ? "bg-lime-400 text-neutral-950 shadow-md shadow-lime-500/10 hover:brightness-110"
+                          : "bg-neutral-900 border border-white/10 text-white hover:border-lime-400/30"
+                      }`}
+                    >
+                      {sicchierolliConfig.buttonText}
+                    </a>
                   </div>
 
-                  <div className="flex items-start gap-3">
-                    <Clock className="w-5 h-5 text-lime-400 shrink-0 mt-0.5" />
+                  {/* Local 02 Card */}
+                  <div className={`p-6 sm:p-8 rounded-3xl sm:rounded-[2.5rem] border transition-all flex flex-col justify-between ${
+                    selectedLoc === "fatec" 
+                      ? "bg-gradient-to-b from-neutral-900 to-neutral-950 border-cyan-400/40 shadow-xl shadow-cyan-400/5" 
+                      : "bg-neutral-950/40 border-white/5 hover:border-white/10"
+                  }`}>
                     <div>
-                      <p className="text-xs text-neutral-400 font-mono uppercase tracking-wider">HORÁRIO</p>
-                      <p className="font-bold text-white">19h às 21h30</p>
+                      <div className="flex items-center justify-between mb-6">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-400/10 border border-cyan-400/20 text-cyan-400 text-[10px] font-black uppercase tracking-widest">
+                          {fatecConfig.badge}
+                        </div>
+                      </div>
+
+                      <h3 className="text-xl md:text-2xl font-serif text-white font-light mb-4">
+                        {fatecConfig.title}
+                      </h3>
+
+                      <div className="space-y-4 text-sm mb-8">
+                        <div className="flex items-start gap-3">
+                          <Calendar className="w-5 h-5 text-cyan-400 shrink-0 mt-0.5" />
+                          <div>
+                            <p className="text-xs text-neutral-400 font-mono uppercase tracking-wider">{fatecConfig.datesTitle}</p>
+                            <p className="font-bold text-white">{fatecConfig.dates}</p>
+                            <p className="text-xs text-neutral-400 font-sans">{fatecConfig.datesSub}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-start gap-3">
+                          <Clock className="w-5 h-5 text-cyan-400 shrink-0 mt-0.5" />
+                          <div>
+                            <p className="text-xs text-neutral-400 font-mono uppercase tracking-wider">{fatecConfig.hoursTitle}</p>
+                            <p className="font-bold text-white">{fatecConfig.hours}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-start gap-3">
+                          <MapPin className="w-5 h-5 text-cyan-400 shrink-0 mt-0.5" />
+                          <div>
+                            <p className="text-xs text-neutral-400 font-mono uppercase tracking-wider">{fatecConfig.addressTitle}</p>
+                            <p className="font-bold text-white">{fatecConfig.address}</p>
+                            <p className="text-xs text-neutral-400 font-sans">{fatecConfig.addressSub}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-start gap-3">
+                          <Award className="w-5 h-5 text-cyan-400 shrink-0 mt-0.5" />
+                          <div>
+                            <p className="text-xs text-neutral-400 font-mono uppercase tracking-wider">{fatecConfig.investmentTitle}</p>
+                            <p className="font-bold text-cyan-400">{fatecConfig.investment}</p>
+                            <p className="text-xs text-neutral-400 font-sans">{fatecConfig.investmentSub}</p>
+                          </div>
+                        </div>
+                      </div>
                     </div>
+
+                    <a
+                      href="#inscricao"
+                      onClick={() => {
+                        setSelectedLoc("fatec");
+                        setFormData(prev => ({ ...prev, location: "fatec" }));
+                      }}
+                      className={`w-full py-4 rounded-xl text-xs font-black uppercase tracking-widest text-center transition-all ${
+                        selectedLoc === "fatec"
+                          ? "bg-cyan-400 text-neutral-950 shadow-md shadow-cyan-500/10 hover:brightness-110"
+                          : "bg-neutral-900 border border-white/10 text-white hover:border-cyan-400/30"
+                      }`}
+                    >
+                      {fatecConfig.buttonText}
+                    </a>
                   </div>
 
-                  <div className="flex items-start gap-3">
-                    <MapPin className="w-5 h-5 text-lime-400 shrink-0 mt-0.5" />
-                    <div>
-                      <p className="text-xs text-neutral-400 font-mono uppercase tracking-wider">ENDEREÇO</p>
-                      <p className="font-bold text-white">Rua Prof. Laerte Barbosa Cintra, 929</p>
-                      <p className="text-xs text-neutral-400 font-sans">Residencial Baldassari — Franca/SP</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-3">
-                    <Award className="w-5 h-5 text-lime-400 shrink-0 mt-0.5" />
-                    <div>
-                      <p className="text-xs text-neutral-400 font-mono uppercase tracking-wider">INVESTIMENTO</p>
-                      <p className="font-bold text-lime-400">100% Gratuito</p>
-                      <p className="text-xs text-neutral-400 font-sans">Vagas estritamente limitadas!</p>
-                    </div>
-                  </div>
                 </div>
-              </div>
-
-              <a
-                href="#inscricao"
-                onClick={() => {
-                  setSelectedLoc("sicchierolli");
-                  setFormData(prev => ({ ...prev, location: "sicchierolli" }));
-                }}
-                className={`w-full py-4 rounded-xl text-xs font-black uppercase tracking-widest text-center transition-all ${
-                  selectedLoc === "sicchierolli"
-                    ? "bg-lime-400 text-neutral-950 shadow-md shadow-lime-500/10 hover:brightness-110"
-                    : "bg-neutral-900 border border-white/10 text-white hover:border-lime-400/30"
-                }`}
-              >
-                Selecionar & Inscrever nesta Turma
-              </a>
-            </div>
-
-            {/* Local 02 Card */}
-            <div className={`p-6 sm:p-8 rounded-3xl sm:rounded-[2.5rem] border transition-all flex flex-col justify-between ${
-              selectedLoc === "fatec" 
-                ? "bg-gradient-to-b from-neutral-900 to-neutral-950 border-cyan-400/40 shadow-xl shadow-cyan-400/5" 
-                : "bg-neutral-950/40 border-white/5 hover:border-white/10"
-            }`}>
-              <div>
-                <div className="flex items-center justify-between mb-6">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-400/10 border border-cyan-400/20 text-cyan-400 text-[10px] font-black uppercase tracking-widest">
-                    TURMA TARDE
-                  </div>
-                </div>
-
-                <h3 className="text-xl md:text-2xl font-serif text-white font-light mb-4">
-                  FATEC Franca
-                </h3>
-
-                <div className="space-y-4 text-sm mb-8">
-                  <div className="flex items-start gap-3">
-                    <Calendar className="w-5 h-5 text-cyan-400 shrink-0 mt-0.5" />
-                    <div>
-                      <p className="text-xs text-neutral-400 font-mono uppercase tracking-wider">DATAS</p>
-                      <p className="font-bold text-white">De 15/07 à 20/08</p>
-                      <p className="text-xs text-neutral-400 font-sans">Aulas às Quartas e Quintas</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-3">
-                    <Clock className="w-5 h-5 text-cyan-400 shrink-0 mt-0.5" />
-                    <div>
-                      <p className="text-xs text-neutral-400 font-mono uppercase tracking-wider">HORÁRIO</p>
-                      <p className="font-bold text-white">13h30 às 16h00</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-3">
-                    <MapPin className="w-5 h-5 text-cyan-400 shrink-0 mt-0.5" />
-                    <div>
-                      <p className="text-xs text-neutral-400 font-mono uppercase tracking-wider">ENDEREÇO</p>
-                      <p className="font-bold text-white">FATEC - Faculdade de Tecnologia</p>
-                      <p className="text-xs text-neutral-400 font-sans">Rua Irene Grecco, 4580, Vila Imperador — Franca/SP</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-3">
-                    <Award className="w-5 h-5 text-cyan-400 shrink-0 mt-0.5" />
-                    <div>
-                      <p className="text-xs text-neutral-400 font-mono uppercase tracking-wider">INVESTIMENTO</p>
-                      <p className="font-bold text-cyan-400">100% Gratuito</p>
-                      <p className="text-xs text-neutral-400 font-sans">Vagas estritamente limitadas!</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <a
-                href="#inscricao"
-                onClick={() => {
-                  setSelectedLoc("fatec");
-                  setFormData(prev => ({ ...prev, location: "fatec" }));
-                }}
-                className={`w-full py-4 rounded-xl text-xs font-black uppercase tracking-widest text-center transition-all ${
-                  selectedLoc === "fatec"
-                    ? "bg-cyan-400 text-neutral-950 shadow-md shadow-cyan-500/10 hover:brightness-110"
-                    : "bg-neutral-900 border border-white/10 text-white hover:border-cyan-400/30"
-                }`}
-              >
-                Selecionar & Inscrever nesta Turma
-              </a>
-            </div>
-
-          </div>
+              </>
+            );
+          })()}
         </div>
       </section>
 
@@ -1159,22 +1289,109 @@ export default function App() {
                 </div>
               </div>
 
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <label className="text-xs font-mono font-bold tracking-wider text-neutral-400 uppercase block mb-2">Sua Atuação Profissional Principal</label>
+                  <div className="relative">
+                    <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500" />
+                    <select 
+                      name="role"
+                      value={formData.role}
+                      onChange={handleInputChange}
+                      className="w-full bg-neutral-950 border border-white/10 focus:border-lime-400 rounded-xl py-4 pl-12 pr-4 text-sm text-white focus:outline-none appearance-none transition-all"
+                    >
+                      <option value="">Selecione sua área...</option>
+                      <option value="empresario">Empresário / Diretor</option>
+                      <option value="lider">Líder / Coordenador</option>
+                      <option value="profissional_lib">Profissional Autônomo</option>
+                      <option value="outro">Outra atuação</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs font-mono font-bold tracking-wider text-neutral-400 uppercase block mb-2">CPF *</label>
+                  <div className="relative">
+                    <ShieldCheck className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500" />
+                    <input 
+                      type="text" 
+                      name="cpf"
+                      required
+                      value={formData.cpf}
+                      onChange={handleInputChange}
+                      placeholder="000.000.000-00"
+                      maxLength={14}
+                      className="w-full bg-neutral-950 border border-white/10 focus:border-lime-400 rounded-xl py-4 pl-12 pr-4 text-sm text-white focus:outline-none transition-all"
+                    />
+                  </div>
+                </div>
+              </div>
+
               <div>
-                <label className="text-xs font-mono font-bold tracking-wider text-neutral-400 uppercase block mb-2">Sua Atuação Profissional Principal</label>
-                <div className="relative">
-                  <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500" />
-                  <select 
-                    name="role"
-                    value={formData.role}
-                    onChange={handleInputChange}
-                    className="w-full bg-neutral-950 border border-white/10 focus:border-lime-400 rounded-xl py-4 pl-12 pr-4 text-sm text-white focus:outline-none appearance-none transition-all"
-                  >
-                    <option value="">Selecione sua área...</option>
-                    <option value="empresario">Empresário / Diretor</option>
-                    <option value="lider">Líder / Coordenador</option>
-                    <option value="profissional_lib">Profissional Autônomo</option>
-                    <option value="outro">Outra atuação</option>
-                  </select>
+                <label className="text-xs font-mono font-bold tracking-wider text-neutral-400 uppercase block mb-2">Comprovante de Endereço *</label>
+                <p className="text-xs text-neutral-500 mb-3 font-light">Envie um arquivo PDF ou uma foto do seu comprovante de residência para validação da vaga presencial em Franca/SP.</p>
+                
+                <div className={`border-2 border-dashed rounded-2xl p-6 transition-all text-center relative ${
+                  formData.address_proof 
+                    ? "border-lime-400/50 bg-lime-400/5" 
+                    : "border-white/10 hover:border-lime-400/30 bg-neutral-950/40"
+                }`}>
+                  <input 
+                    type="file" 
+                    id="address_proof_file"
+                    accept="image/*,application/pdf"
+                    onChange={handleFileChange}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                  />
+                  
+                  {formData.address_proof ? (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-center gap-3">
+                        {fileName.toLowerCase().endsWith(".pdf") ? (
+                          <FileText className="w-8 h-8 text-lime-400" />
+                        ) : (
+                          <ImageIcon className="w-8 h-8 text-lime-400" />
+                        )}
+                        <div className="text-left">
+                          <p className="text-xs text-white font-medium truncate max-w-[250px] sm:max-w-md">{fileName || "comprovante_endereco"}</p>
+                          <p className="text-[10px] text-neutral-500 font-mono">Arquivo pronto para envio</p>
+                        </div>
+                      </div>
+                      
+                      {/* Show preview if it is an image */}
+                      {formData.address_proof.startsWith("data:image/") && (
+                        <div className="mx-auto max-w-[150px] aspect-video rounded-lg overflow-hidden border border-white/10 relative mt-2 group">
+                          <img 
+                            src={formData.address_proof} 
+                            alt="Preview Comprovante" 
+                            className="w-full h-full object-cover"
+                            referrerPolicy="no-referrer"
+                          />
+                        </div>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={handleRemoveFile}
+                        className="relative z-20 text-red-400 hover:text-red-300 text-xs font-mono font-bold uppercase tracking-wider transition-all inline-flex items-center gap-1.5 mt-2"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                        Remover Arquivo
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-2 pointer-events-none">
+                      <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-neutral-400 mx-auto">
+                        <Upload className="w-6 h-6" />
+                      </div>
+                      <p className="text-xs text-neutral-300 font-medium">
+                        Arraste seu arquivo ou clique para selecionar
+                      </p>
+                      <p className="text-[10px] text-neutral-500 font-mono">
+                        PNG, JPG, JPEG ou PDF (Máx 5MB)
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
 

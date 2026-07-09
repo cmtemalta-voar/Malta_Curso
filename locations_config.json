@@ -1,0 +1,36 @@
+[
+  {
+    "id": "sicchierolli",
+    "badge": "TURMA NOITE",
+    "title": "Escola Sicchierolli",
+    "datesTitle": "DATAS",
+    "dates": "De 13/07 à 05/08",
+    "datesSub": "Aulas às Segundas, Terças e Quartas",
+    "hoursTitle": "HORÁRIO",
+    "hours": "19h às 21h30",
+    "addressTitle": "ENDEREÇO",
+    "address": "Rua Prof. Laerte Barbosa Cintra, 929",
+    "addressSub": "Residencial Baldassari — Franca/SP",
+    "investmentTitle": "INVESTIMENTO",
+    "investment": "100% Gratuito",
+    "investmentSub": "Vagas estritamente limitadas!",
+    "buttonText": "Selecionar & Inscrever nesta Turma"
+  },
+  {
+    "id": "fatec",
+    "badge": "TURMA TARDE",
+    "title": "FATEC Franca",
+    "datesTitle": "DATAS",
+    "dates": "De 15/07 à 20/08",
+    "datesSub": "Aulas às Quartas e Quintas",
+    "hoursTitle": "HORÁRIO",
+    "hours": "13h30 às 16h00",
+    "addressTitle": "ENDEREÇO",
+    "address": "FATEC - Faculdade de Tecnologia",
+    "addressSub": "Rua Irene Grecco, 4580, Vila Imperador — Franca/SP",
+    "investmentTitle": "INVESTIMENTO",
+    "investment": "100% Gratuito",
+    "investmentSub": "Vagas estritamente limitadas!",
+    "buttonText": "Selecionar & Inscrever nesta Turma"
+  }
+]
