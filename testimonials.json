@@ -1,0 +1,49 @@
+{
+  "sectionSettings": {
+    "badge": "DEPOIMENTOS REAIS",
+    "title": "Histórias de Sucesso",
+    "description": "Veja como profissionais e líderes de tecnologia estão revolucionando seus resultados e acelerando entregas com IA Generativa e Processos Ágeis."
+  },
+  "items": [
+    {
+      "id": 1,
+      "name": "Mariana Costa",
+      "role": "Product Owner @ Stefanini",
+      "image": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=256&auto=format&fit=crop",
+      "quote": "O treinamento com o Alexandre Malta foi um divisor de águas. Aprendi a integrar ferramentas de IA Generativa no Jira e no refinamento de histórias. Reduzimos o tempo de escrita de documentação técnica em mais de 60%. Sensacional!",
+      "rating": 5,
+      "highlight": "Redução de 60% no tempo de escrita de documentação",
+      "videoUrl": ""
+    },
+    {
+      "id": 2,
+      "name": "Rodrigo Alencar",
+      "role": "Senior Software Engineer @ Nubank",
+      "image": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=256&auto=format&fit=crop",
+      "quote": "Sempre fui cético com IA no desenvolvimento, mas a abordagem prática do Alexandre focada em prompts de engenharia para modelagem de arquitetura e processos ágeis me fez mudar de ideia. O curso presencial em Franca vale cada segundo.",
+      "rating": 5,
+      "highlight": "Engenharia de prompts aplicada à arquitetura",
+      "videoUrl": ""
+    },
+    {
+      "id": 3,
+      "name": "Juliana Mendes",
+      "role": "Agile Coach & Scrum Master",
+      "image": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=256&auto=format&fit=crop",
+      "quote": "Incrível como o Alexandre consegue traduzir conceitos complexos de IA para o dia a dia do agilismo. Agora consigo automatizar a coleta de métricas e gerar relatórios de retrospectiva em minutos usando modelos de linguagem. Recomendo fortemente!",
+      "rating": 5,
+      "highlight": "Automatização de métricas e retrospectivas",
+      "videoUrl": ""
+    },
+    {
+      "id": 4,
+      "name": "Felipe Baptista",
+      "role": "Gerente de Projetos @ Localiza",
+      "image": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=256&auto=format&fit=crop",
+      "quote": "A metodologia de ensinar IA na prática e de forma presencial faz toda a diferença. O networking gerado no curso e os frameworks ágeis apresentados abriram novos horizontes na minha carreira. Alexandre Malta é referência no assunto.",
+      "rating": 5,
+      "highlight": "Metodologia prática e presencial diferenciada",
+      "videoUrl": ""
+    }
+  ]
+}

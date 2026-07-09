@@ -102,7 +102,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
   } | null>(null);
 
   // Learning modules management states
-  const [activeTab, setActiveTab] = useState<"leads" | "modules" | "locations">("leads");
+  const [activeTab, setActiveTab] = useState<"leads" | "modules" | "locations" | "testimonials" | "branding">("leads");
   const [learningModules, setLearningModules] = useState<any[]>([]);
   const [isLoadingModules, setIsLoadingModules] = useState(false);
   const [modulesError, setModulesError] = useState("");
@@ -114,6 +114,43 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [imageUploadError, setImageUploadError] = useState("");
   const [isSavingModules, setIsSavingModules] = useState(false);
+
+  // Testimonials management states
+  const [testimonialsData, setTestimonialsData] = useState<{
+    sectionSettings: { badge: string; title: string; description: string };
+    items: any[];
+  }>({
+    sectionSettings: {
+      badge: "DEPOIMENTOS REAIS",
+      title: "Histórias de Sucesso",
+      description: "Veja como profissionais e líderes de tecnologia estão revolucionando seus resultados e acelerando entregas com IA Generativa e Processos Ágeis."
+    },
+    items: []
+  });
+  const [isLoadingTestimonials, setIsLoadingTestimonials] = useState(false);
+  const [testimonialsError, setTestimonialsError] = useState("");
+  const [isSavingTestimonials, setIsSavingTestimonials] = useState(false);
+
+  // States for editing sectionSettings
+  const [tempTestimonialSecBadge, setTempTestimonialSecBadge] = useState("");
+  const [tempTestimonialSecTitle, setTempTestimonialSecTitle] = useState("");
+  const [tempTestimonialSecDesc, setTempTestimonialSecDesc] = useState("");
+
+  // States for editing a single testimonial item
+  const [editingTestimonial, setEditingTestimonial] = useState<any | null>(null);
+  const [tempTestimonialName, setTempTestimonialName] = useState("");
+  const [tempTestimonialRole, setTempTestimonialRole] = useState("");
+  const [tempTestimonialQuote, setTempTestimonialQuote] = useState("");
+  const [tempTestimonialRating, setTempTestimonialRating] = useState(5);
+  const [tempTestimonialHighlight, setTempTestimonialHighlight] = useState("");
+  const [tempTestimonialImage, setTempTestimonialImage] = useState("");
+  const [tempTestimonialVideoUrl, setTempTestimonialVideoUrl] = useState("");
+  
+  const [isUploadingTestimonialImage, setIsUploadingTestimonialImage] = useState(false);
+  const [testimonialImageUploadError, setTestimonialImageUploadError] = useState("");
+
+  const [isUploadingTestimonialVideo, setIsUploadingTestimonialVideo] = useState(false);
+  const [testimonialVideoUploadError, setTestimonialVideoUploadError] = useState("");
 
   // Locations management states
   const [locations, setLocations] = useState<any[]>([]);
@@ -138,6 +175,111 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
   const [tempLocButtonText, setTempLocButtonText] = useState("");
 
   const [isSavingLocations, setIsSavingLocations] = useState(false);
+
+  // Branding management states
+  const [brandingConfig, setBrandingConfig] = useState({
+    logoType: "svg",
+    logoUrl: "",
+    logoText: "ALEXANDRE MALTA",
+    logoSubtext: "Processos Ágeis com IA"
+  });
+  const [isLoadingBranding, setIsLoadingBranding] = useState(false);
+  const [brandingError, setBrandingError] = useState("");
+  const [isSavingBranding, setIsSavingBranding] = useState(false);
+  const [tempLogoType, setTempLogoType] = useState("svg");
+  const [tempLogoUrl, setTempLogoUrl] = useState("");
+  const [tempLogoText, setTempLogoText] = useState("");
+  const [tempLogoSubtext, setTempLogoSubtext] = useState("");
+  const [isUploadingLogoImage, setIsUploadingLogoImage] = useState(false);
+  const [logoImageUploadError, setLogoImageUploadError] = useState("");
+
+  const fetchBrandingConfig = async () => {
+    setIsLoadingBranding(true);
+    setBrandingError("");
+    try {
+      const res = await fetch("/api/branding");
+      const data = await res.json();
+      if (res.ok && data.success && data.data) {
+        const b = data.data;
+        setBrandingConfig(b);
+        setTempLogoType(b.logoType || "svg");
+        setTempLogoUrl(b.logoUrl || "");
+        setTempLogoText(b.logoText || "");
+        setTempLogoSubtext(b.logoSubtext || "");
+      } else {
+        setBrandingError(data.message || "Erro ao carregar configurações de marca.");
+      }
+    } catch (err: any) {
+      console.error("Error fetching branding:", err);
+      setBrandingError("Erro ao se conectar ao servidor para buscar marca.");
+    } finally {
+      setIsLoadingBranding(false);
+    }
+  };
+
+  const handleSaveBranding = async () => {
+    setIsSavingBranding(true);
+    try {
+      const res = await fetch("/api/branding", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-password": password
+        },
+        body: JSON.stringify({
+          logoType: tempLogoType,
+          logoUrl: tempLogoUrl,
+          logoText: tempLogoText,
+          logoSubtext: tempLogoSubtext
+        })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setBrandingConfig({
+          logoType: tempLogoType,
+          logoUrl: tempLogoUrl,
+          logoText: tempLogoText,
+          logoSubtext: tempLogoSubtext
+        });
+        alert("Configurações de marca salvas com sucesso!");
+      } else {
+        alert(data.message || "Erro ao salvar configurações de marca.");
+      }
+    } catch (err: any) {
+      console.error("Error updating branding:", err);
+      alert("Erro ao se conectar ao servidor para salvar.");
+    } finally {
+      setIsSavingBranding(false);
+    }
+  };
+
+  const handleLogoImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      setLogoImageUploadError("A imagem deve ter menos de 2MB.");
+      return;
+    }
+
+    setIsUploadingLogoImage(true);
+    setLogoImageUploadError("");
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      if (typeof reader.result === "string") {
+        setTempLogoUrl(reader.result);
+        setTempLogoType("image");
+      } else {
+        setLogoImageUploadError("Erro ao processar imagem.");
+      }
+      setIsUploadingLogoImage(false);
+    };
+    reader.onerror = () => {
+      setLogoImageUploadError("Erro ao ler o arquivo.");
+      setIsUploadingLogoImage(false);
+    };
+    reader.readAsDataURL(file);
+  };
 
   const fetchLearningModules = async () => {
     setIsLoadingModules(true);
@@ -174,6 +316,53 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
       setLocationsError("Erro ao se conectar ao servidor para buscar configurações de locais.");
     } finally {
       setIsLoadingLocations(false);
+    }
+  };
+
+  const fetchTestimonials = async () => {
+    setIsLoadingTestimonials(true);
+    setTestimonialsError("");
+    try {
+      const res = await fetch("/api/testimonials");
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setTestimonialsData(data.data || { sectionSettings: { badge: "", title: "", description: "" }, items: [] });
+      } else {
+        setTestimonialsError(data.message || "Erro ao carregar os depoimentos.");
+      }
+    } catch (err: any) {
+      console.error("Error fetching testimonials:", err);
+      setTestimonialsError("Erro ao se conectar ao servidor para buscar depoimentos.");
+    } finally {
+      setIsLoadingTestimonials(false);
+    }
+  };
+
+  const handleSaveTestimonials = async (updatedData: typeof testimonialsData) => {
+    setIsSavingTestimonials(true);
+    try {
+      const res = await fetch("/api/testimonials", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-password": password
+        },
+        body: JSON.stringify(updatedData)
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setTestimonialsData(updatedData);
+        return true;
+      } else {
+        alert(data.message || "Erro ao salvar os depoimentos.");
+        return false;
+      }
+    } catch (err: any) {
+      console.error("Error updating testimonials:", err);
+      alert("Erro ao conectar ao servidor para salvar os depoimentos.");
+      return false;
+    } finally {
+      setIsSavingTestimonials(false);
     }
   };
 
@@ -245,6 +434,163 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
       setIsSavingLocations(false);
     }
   };
+
+  const handleSaveSectionSettings = async () => {
+    const updatedData = {
+      ...testimonialsData,
+      sectionSettings: {
+        badge: tempTestimonialSecBadge,
+        title: tempTestimonialSecTitle,
+        description: tempTestimonialSecDesc
+      }
+    };
+    const success = await handleSaveTestimonials(updatedData);
+    if (success) {
+      alert("Configurações do cabeçalho de depoimentos salvas com sucesso!");
+    }
+  };
+
+  const handleDeleteTestimonial = async (index: number) => {
+    if (!confirm("Tem certeza que deseja excluir este depoimento? Esta ação não pode ser desfeita.")) {
+      return;
+    }
+    const updatedItems = testimonialsData.items.filter((_, i) => i !== index);
+    const updatedData = {
+      ...testimonialsData,
+      items: updatedItems
+    };
+    const success = await handleSaveTestimonials(updatedData);
+    if (success) {
+      alert("Depoimento excluído com sucesso!");
+    }
+  };
+
+  const handleEditTestimonialClick = (item: any, index: number) => {
+    setEditingTestimonial({ ...item, index });
+    setTempTestimonialName(item.name || "");
+    setTempTestimonialRole(item.role || "");
+    setTempTestimonialQuote(item.quote || "");
+    setTempTestimonialRating(item.rating || 5);
+    setTempTestimonialHighlight(item.highlight || "");
+    setTempTestimonialImage(item.image || "");
+    setTempTestimonialVideoUrl(item.videoUrl || "");
+    setTestimonialImageUploadError("");
+    setTestimonialVideoUploadError("");
+  };
+
+  const handleAddNewTestimonialClick = () => {
+    setEditingTestimonial({ isNew: true });
+    setTempTestimonialName("");
+    setTempTestimonialRole("");
+    setTempTestimonialQuote("");
+    setTempTestimonialRating(5);
+    setTempTestimonialHighlight("");
+    setTempTestimonialImage("");
+    setTempTestimonialVideoUrl("");
+    setTestimonialImageUploadError("");
+    setTestimonialVideoUploadError("");
+  };
+
+  const handleSaveTestimonialItem = async () => {
+    if (!tempTestimonialName.trim()) {
+      alert("Por favor, informe o nome do depoente.");
+      return;
+    }
+    if (!tempTestimonialQuote.trim()) {
+      alert("Por favor, preencha o texto do depoimento.");
+      return;
+    }
+
+    const newItem = {
+      name: tempTestimonialName,
+      role: tempTestimonialRole,
+      quote: tempTestimonialQuote,
+      rating: Number(tempTestimonialRating),
+      highlight: tempTestimonialHighlight,
+      image: tempTestimonialImage,
+      videoUrl: tempTestimonialVideoUrl
+    };
+
+    let updatedItems = [...testimonialsData.items];
+    if (editingTestimonial && editingTestimonial.isNew) {
+      updatedItems.push(newItem);
+    } else if (editingTestimonial && typeof editingTestimonial.index === 'number') {
+      updatedItems[editingTestimonial.index] = newItem;
+    }
+
+    const updatedData = {
+      ...testimonialsData,
+      items: updatedItems
+    };
+
+    const success = await handleSaveTestimonials(updatedData);
+    if (success) {
+      setEditingTestimonial(null);
+      alert(editingTestimonial?.isNew ? "Depoimento adicionado com sucesso!" : "Depoimento atualizado com sucesso!");
+    }
+  };
+
+  const handleTestimonialImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 3 * 1024 * 1024) {
+      setTestimonialImageUploadError("A imagem deve ter menos de 3MB.");
+      return;
+    }
+
+    setIsUploadingTestimonialImage(true);
+    setTestimonialImageUploadError("");
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      if (typeof reader.result === "string") {
+        setTempTestimonialImage(reader.result);
+      } else {
+        setTestimonialImageUploadError("Erro ao processar imagem.");
+      }
+      setIsUploadingTestimonialImage(false);
+    };
+    reader.onerror = () => {
+      setTestimonialImageUploadError("Erro ao ler o arquivo de imagem.");
+      setIsUploadingTestimonialImage(false);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleTestimonialVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 15 * 1024 * 1024) {
+      setTestimonialVideoUploadError("O vídeo deve ter menos de 15MB. Para arquivos maiores, informe o link/URL do YouTube ou Vimeo.");
+      return;
+    }
+
+    setIsUploadingTestimonialVideo(true);
+    setTestimonialVideoUploadError("");
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      if (typeof reader.result === "string") {
+        setTempTestimonialVideoUrl(reader.result);
+      } else {
+        setTestimonialVideoUploadError("Erro ao processar vídeo.");
+      }
+      setIsUploadingTestimonialVideo(false);
+    };
+    reader.onerror = () => {
+      setTestimonialVideoUploadError("Erro ao ler o arquivo de vídeo.");
+      setIsUploadingTestimonialVideo(false);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  useEffect(() => {
+    if (activeTab === "testimonials" && testimonialsData) {
+      setTempTestimonialSecBadge(testimonialsData.sectionSettings.badge || "");
+      setTempTestimonialSecTitle(testimonialsData.sectionSettings.title || "");
+      setTempTestimonialSecDesc(testimonialsData.sectionSettings.description || "");
+    }
+  }, [activeTab, testimonialsData]);
 
   const handleEditModuleClick = (mod: any) => {
     setEditingModule(mod);
@@ -327,6 +673,8 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
     if (isLoggedIn) {
       fetchLearningModules();
       fetchLocationsConfig();
+      fetchTestimonials();
+      fetchBrandingConfig();
     }
   }, [isLoggedIn]);
 
@@ -740,6 +1088,38 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
           >
             <span>Turmas & Locais</span>
             {activeTab === "locations" && (
+              <motion.div 
+                layoutId="activeTabUnderline" 
+                className="absolute bottom-0 left-0 right-0 h-0.5 bg-lime-400"
+              />
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab("testimonials")}
+            className={`pb-4 text-sm font-black uppercase tracking-wider transition-all relative cursor-pointer ${
+              activeTab === "testimonials" 
+                ? "text-lime-400" 
+                : "text-neutral-500 hover:text-neutral-300"
+            }`}
+          >
+            <span>Depoimentos</span>
+            {activeTab === "testimonials" && (
+              <motion.div 
+                layoutId="activeTabUnderline" 
+                className="absolute bottom-0 left-0 right-0 h-0.5 bg-lime-400"
+              />
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab("branding")}
+            className={`pb-4 text-sm font-black uppercase tracking-wider transition-all relative cursor-pointer ${
+              activeTab === "branding" 
+                ? "text-lime-400" 
+                : "text-neutral-500 hover:text-neutral-300"
+            }`}
+          >
+            <span>Marca & Logo</span>
+            {activeTab === "branding" && (
               <motion.div 
                 layoutId="activeTabUnderline" 
                 className="absolute bottom-0 left-0 right-0 h-0.5 bg-lime-400"
@@ -1366,7 +1746,713 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
           </div>
         )}
 
+        {activeTab === "testimonials" && (
+          <div className="space-y-8 animate-fadeIn">
+            {/* Header of Section */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-neutral-900/30 border border-white/5 rounded-3xl p-6 md:p-8">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <MessageSquare className="w-5 h-5 text-lime-400" />
+                  <h3 className="text-xl font-bold text-white uppercase tracking-wider">Depoimentos dos Alunos</h3>
+                </div>
+                <p className="text-xs text-neutral-400 font-light max-w-2xl leading-relaxed">
+                  Gerencie todos os depoimentos de ex-alunos que aparecem na landing page. Altere textos do cabeçalho da seção, crie novos depoimentos, carregue fotos, adicione notas, e configure vídeos (fazendo upload ou inserindo links de vídeo).
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={fetchTestimonials}
+                disabled={isLoadingTestimonials}
+                className="shrink-0 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-white text-xs font-bold font-mono uppercase tracking-wider border border-white/10 active:scale-95 transition-all cursor-pointer disabled:opacity-50"
+              >
+                <RefreshCw className={`w-4 h-4 ${isLoadingTestimonials ? "animate-spin text-lime-400" : "text-neutral-400"}`} />
+                Recarregar Depoimentos
+              </button>
+            </div>
+
+            {testimonialsError && (
+              <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-400 text-sm rounded-2xl flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-bold">Erro de Carregamento</p>
+                  <p className="text-xs text-neutral-400 mt-1 leading-relaxed">{testimonialsError}</p>
+                </div>
+              </div>
+            )}
+
+            {isLoadingTestimonials ? (
+              <div className="flex flex-col items-center justify-center py-20 gap-4">
+                <RefreshCw className="w-8 h-8 text-lime-400 animate-spin" />
+                <p className="text-sm text-neutral-400 font-mono">Buscando depoimentos...</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                {/* Left Panel: Section Title Customization */}
+                <div className="lg:col-span-4 bg-neutral-900/50 border border-white/5 rounded-3xl p-6 space-y-6 h-fit">
+                  <div className="space-y-1">
+                    <h4 className="text-sm font-bold text-white uppercase tracking-wider">Cabeçalho da Seção</h4>
+                    <p className="text-[11px] text-neutral-400">Edite as informações gerais da seção de depoimentos.</p>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-[10px] font-mono font-bold tracking-widest text-neutral-400 uppercase block mb-1">
+                        Etiqueta Superior (Badge)
+                      </label>
+                      <input
+                        type="text"
+                        value={tempTestimonialSecBadge}
+                        onChange={(e) => setTempTestimonialSecBadge(e.target.value)}
+                        placeholder="Ex: DEPOIMENTOS"
+                        className="w-full bg-neutral-950 border border-white/10 focus:border-lime-400 rounded-xl py-3 px-4 text-xs text-white focus:outline-none transition-all font-sans"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-mono font-bold tracking-widest text-neutral-400 uppercase block mb-1">
+                        Título Principal da Seção
+                      </label>
+                      <input
+                        type="text"
+                        value={tempTestimonialSecTitle}
+                        onChange={(e) => setTempTestimonialSecTitle(e.target.value)}
+                        placeholder="Ex: O Que Dizem Nossos Alunos"
+                        className="w-full bg-neutral-950 border border-white/10 focus:border-lime-400 rounded-xl py-3 px-4 text-xs text-white focus:outline-none transition-all font-sans"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-mono font-bold tracking-widest text-neutral-400 uppercase block mb-1">
+                        Descrição da Seção
+                      </label>
+                      <textarea
+                        value={tempTestimonialSecDesc}
+                        onChange={(e) => setTempTestimonialSecDesc(e.target.value)}
+                        placeholder="Texto de descrição curto da seção..."
+                        rows={4}
+                        className="w-full bg-neutral-950 border border-white/10 focus:border-lime-400 rounded-xl py-3 px-4 text-xs text-white focus:outline-none transition-all font-sans resize-none leading-relaxed"
+                      />
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleSaveSectionSettings}
+                      disabled={isSavingTestimonials}
+                      className="w-full bg-lime-400 hover:bg-lime-300 text-neutral-950 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5"
+                    >
+                      {isSavingTestimonials ? (
+                        <>
+                          <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                          <span>Salvando...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Check className="w-3.5 h-3.5" />
+                          <span>Salvar Configurações</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Right Panel: Testimonial Cards List */}
+                <div className="lg:col-span-8 space-y-6">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-bold text-white uppercase tracking-wider">
+                      Lista de Depoimentos ({testimonialsData?.items?.length || 0})
+                    </h4>
+                    <button
+                      type="button"
+                      onClick={handleAddNewTestimonialClick}
+                      className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-lime-400 to-lime-500 hover:from-lime-300 hover:to-lime-400 text-neutral-950 rounded-xl text-xs font-black uppercase tracking-widest active:scale-95 transition-all cursor-pointer"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>Adicionar Depoimento</span>
+                    </button>
+                  </div>
+
+                  {(!testimonialsData?.items || testimonialsData.items.length === 0) ? (
+                    <div className="border border-dashed border-white/10 rounded-3xl p-12 text-center space-y-3">
+                      <MessageSquare className="w-8 h-8 text-neutral-600 mx-auto" />
+                      <p className="text-sm text-neutral-400">Nenhum depoimento cadastrado.</p>
+                      <p className="text-xs text-neutral-500">Clique em "Adicionar Depoimento" para começar.</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {testimonialsData.items.map((item, idx) => (
+                        <div
+                          key={idx}
+                          className="bg-neutral-900/30 border border-white/5 rounded-3xl p-6 flex flex-col justify-between hover:border-lime-400/20 transition-all group"
+                        >
+                          <div className="space-y-4">
+                            {/* Stars and rating */}
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-1 text-yellow-500">
+                                {Array.from({ length: item.rating || 5 }).map((_, s) => (
+                                  <svg key={s} className="w-4 h-4 fill-current" viewBox="0 0 20 20">
+                                    <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+                                  </svg>
+                                ))}
+                              </div>
+                              {item.videoUrl && (
+                                <span className="text-[9px] font-mono font-bold tracking-widest text-lime-400 bg-lime-400/10 px-2 py-0.5 rounded uppercase border border-lime-400/20">
+                                  Vídeo Incluído
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Quote highlight */}
+                            {item.highlight && (
+                              <p className="text-xs font-bold text-white line-clamp-1">
+                                "{item.highlight}"
+                              </p>
+                            )}
+
+                            {/* Quote body */}
+                            <p className="text-xs text-neutral-400 leading-relaxed font-light line-clamp-4">
+                              {item.quote}
+                            </p>
+                          </div>
+
+                          <div className="mt-6 pt-4 border-t border-white/5 flex items-center justify-between gap-4">
+                            <div className="flex items-center gap-3 animate-fadeIn">
+                              <div className="w-10 h-10 rounded-full border border-white/10 overflow-hidden shrink-0 bg-neutral-950 flex items-center justify-center text-xs font-bold text-lime-400 uppercase font-mono">
+                                {item.image ? (
+                                  <img
+                                    src={item.image}
+                                    alt={item.name}
+                                    className="w-full h-full object-cover group-hover:scale-105 transition-all"
+                                    referrerPolicy="no-referrer"
+                                  />
+                                ) : (
+                                  item.name ? item.name.substring(0, 2) : "D"
+                                )}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-xs font-bold text-white truncate">{item.name}</p>
+                                <p className="text-[10px] text-neutral-400 truncate font-light mt-0.5">{item.role}</p>
+                              </div>
+                            </div>
+
+                            {/* Item action controls */}
+                            <div className="flex items-center gap-2 shrink-0">
+                              <button
+                                type="button"
+                                onClick={() => handleEditTestimonialClick(item, idx)}
+                                title="Editar Depoimento"
+                                className="p-2 bg-neutral-800 hover:bg-lime-400 hover:text-neutral-950 text-neutral-300 rounded-lg transition-all cursor-pointer"
+                              >
+                                <Edit3 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteTestimonial(idx)}
+                                title="Excluir Depoimento"
+                                className="p-2 bg-neutral-800 hover:bg-red-500 text-neutral-300 hover:text-white rounded-lg transition-all cursor-pointer"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === "branding" && (
+          <div className="space-y-8 animate-fadeIn">
+            {/* Header of Section */}
+            <div className="bg-neutral-900/30 border border-white/5 rounded-3xl p-6 md:p-8 space-y-4">
+              <div className="space-y-1">
+                <span className="text-[10px] text-lime-400 font-bold tracking-wider uppercase font-mono">Identidade Visual & Logo</span>
+                <h2 className="text-xl font-black text-white uppercase tracking-tight">Configurações de Marca</h2>
+                <p className="text-xs text-neutral-400 max-w-2xl font-light leading-relaxed">
+                  Gerencie a logomarca exibida no topo e no rodapé do site institucional. Você pode optar por exibir a logo vetorial padrão (SVG) ou fazer o upload de uma imagem customizada (PNG/JPG/Base64), além de personalizar o nome principal do mentor e subtexto.
+                </p>
+              </div>
+            </div>
+
+            {/* Config Fields Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+              {/* Left Column: Form Fields */}
+              <div className="lg:col-span-7 bg-neutral-900/40 border border-white/5 rounded-3xl p-6 md:p-8 space-y-6">
+                
+                {/* Branding Text Fields */}
+                <div className="space-y-4">
+                  <span className="text-[10px] font-mono font-bold tracking-widest text-lime-400 uppercase block">Texto e Nome da Marca</span>
+                  
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-mono font-bold tracking-widest text-neutral-400 uppercase block">Nome Principal (Mentor / Empresa)</label>
+                    <input 
+                      type="text"
+                      value={tempLogoText}
+                      onChange={(e) => setTempLogoText(e.target.value)}
+                      placeholder="Ex: ALEXANDRE MALTA"
+                      className="w-full bg-neutral-950 border border-white/10 focus:border-lime-400 rounded-2xl py-3.5 px-4 text-xs text-white focus:outline-none transition-all font-sans"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-mono font-bold tracking-widest text-neutral-400 uppercase block">Subtítulo / Especialidade</label>
+                    <input 
+                      type="text"
+                      value={tempLogoSubtext}
+                      onChange={(e) => setTempLogoSubtext(e.target.value)}
+                      placeholder="Ex: Processos Ágeis com IA"
+                      className="w-full bg-neutral-950 border border-white/10 focus:border-lime-400 rounded-2xl py-3.5 px-4 text-xs text-white focus:outline-none transition-all font-sans"
+                    />
+                  </div>
+                </div>
+
+                <hr className="border-white/5" />
+
+                {/* Logo Selection Section */}
+                <div className="space-y-4">
+                  <span className="text-[10px] font-mono font-bold tracking-widest text-lime-400 uppercase block">Tipo de Logotipo</span>
+                  
+                  {/* Select Logo Type */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <button
+                      type="button"
+                      onClick={() => setTempLogoType("svg")}
+                      className={`p-4 rounded-2xl border text-left transition-all ${
+                        tempLogoType === "svg"
+                          ? "bg-lime-400/5 border-lime-400 text-white"
+                          : "bg-neutral-950 border-white/5 text-neutral-400 hover:text-white"
+                      }`}
+                    >
+                      <span className="text-xs font-black block uppercase tracking-wider mb-1">Logo Padrão (SVG)</span>
+                      <span className="text-[10px] font-light leading-relaxed block text-neutral-500">
+                        Usa o logotipo oficial vetorial de alta resolução com as cores azul e dourada.
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setTempLogoType("image")}
+                      className={`p-4 rounded-2xl border text-left transition-all ${
+                        tempLogoType === "image"
+                          ? "bg-lime-400/5 border-lime-400 text-white"
+                          : "bg-neutral-950 border-white/5 text-neutral-400 hover:text-white"
+                      }`}
+                    >
+                      <span className="text-xs font-black block uppercase tracking-wider mb-1">Imagem Customizada</span>
+                      <span className="text-[10px] font-light leading-relaxed block text-neutral-500">
+                        Permite que você envie sua própria imagem ou especifique a URL de uma logomarca própria.
+                      </span>
+                    </button>
+                  </div>
+
+                  {/* Logo Image Fields (visible if logoType is 'image') */}
+                  {tempLogoType === "image" && (
+                    <div className="p-4 bg-neutral-950/50 border border-white/5 rounded-2xl space-y-4 animate-fadeIn">
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-mono font-bold tracking-widest text-neutral-400 uppercase block">Enviar Imagem do Logotipo</label>
+                        <div className="flex items-center gap-4">
+                          <label className="flex items-center gap-2 px-4 py-2.5 bg-neutral-900 border border-white/10 hover:border-lime-400/40 text-white rounded-xl text-xs font-bold transition-all cursor-pointer">
+                            <Upload className="w-4 h-4 text-lime-400" />
+                            <span>{isUploadingLogoImage ? "Processando..." : "Selecionar Logo"}</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={handleLogoImageUpload}
+                              disabled={isUploadingLogoImage}
+                              className="hidden"
+                            />
+                          </label>
+                          {tempLogoUrl && (
+                            <span className="text-[10px] text-neutral-500 truncate max-w-xs">Imagem carregada e pronta</span>
+                          )}
+                        </div>
+                        {logoImageUploadError && (
+                          <p className="text-[10px] text-red-400 mt-1">{logoImageUploadError}</p>
+                        )}
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-mono font-bold tracking-widest text-neutral-400 uppercase block">Ou informe a URL da Imagem</label>
+                        <input 
+                          type="text"
+                          value={tempLogoUrl}
+                          onChange={(e) => setTempLogoUrl(e.target.value)}
+                          placeholder="https://sua-url-de-logo.com/logo.png"
+                          className="w-full bg-neutral-950 border border-white/10 focus:border-lime-400 rounded-xl py-2.5 px-3.5 text-xs text-white focus:outline-none transition-all font-sans"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="pt-4 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={handleSaveBranding}
+                    disabled={isSavingBranding || isUploadingLogoImage}
+                    className="bg-gradient-to-r from-lime-400 to-cyan-500 text-neutral-950 px-6 py-3 rounded-full text-xs font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-md shadow-lime-500/20 disabled:opacity-50 flex items-center gap-2 cursor-pointer"
+                  >
+                    {isSavingBranding ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        <span>Salvando Configurações...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Check className="w-4 h-4" />
+                        <span>Salvar Alterações de Marca</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+              </div>
+
+              {/* Right Column: Interactive Real-time Preview */}
+              <div className="lg:col-span-5 bg-neutral-900/20 border border-white/5 rounded-3xl p-6 md:p-8 space-y-6 flex flex-col justify-between">
+                <div className="space-y-4">
+                  <span className="text-[10px] font-mono font-bold tracking-widest text-neutral-500 uppercase block">Visualização em Tempo Real</span>
+                  
+                  {/* Header/Navbar Preview Area */}
+                  <div className="p-4 bg-neutral-950/60 border border-white/5 rounded-2xl space-y-2">
+                    <span className="text-[9px] font-mono text-neutral-600 block">Pré-visualização do Topo (Navbar)</span>
+                    <div className="h-16 flex items-center justify-between border-t border-b border-white/5 px-2 bg-neutral-900/20">
+                      <div className="flex items-center gap-2">
+                        {/* Logo rendering mockup */}
+                        {tempLogoType === "image" && tempLogoUrl ? (
+                          <img 
+                            src={tempLogoUrl} 
+                            className="w-8 h-8 rounded-lg object-contain bg-neutral-800 animate-fadeIn" 
+                            alt="Logo preview" 
+                            referrerPolicy="no-referrer"
+                          />
+                        ) : (
+                          <svg 
+                            viewBox="0 0 100 100" 
+                            className="w-8 h-8 rounded-lg overflow-hidden shadow-md" 
+                            fill="none" 
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <circle cx="50" cy="50" r="48" fill="#FFFFFF" />
+                            <g transform="translate(50, 50) scale(0.82) translate(-50, -50)">
+                              <path d="M 50 6 C 25.7 6 6 25.7 6 50 C 6 65.5 14 79.1 26.2 87.2 C 14.5 65.5 25.2 40.5 47.8 20.2 C 48.5 19.6 49.3 19 50 18.4 C 50 14.3 50 10.1 50 6 Z" fill="#0F3F8C" />
+                              <circle cx="54" cy="48" r="6.5" fill="#FFFFFF" />
+                              <path d="M 6.5 42 C 15 41.5 27 46 39.5 51 C 46 53.6 51 56 53.5 58 C 48.5 57.5 39.5 52.5 25 47 C 14.5 43 6.5 42 6.5 42 Z" fill="#FFFFFF" />
+                              <path d="M 52.5 57.5 C 49.5 54 41 49 28 44 C 33 46 40.5 50.5 47 55.5 C 50 58 52.5 61 52.5 61 Z" fill="#FFFFFF" />
+                              <path d="M 75.5 30.5 C 84.5 41.5 87.5 56.5 82.5 69.5 C 80.5 74 77.5 78 74 81.5 C 68.5 75 64 67.5 62.5 59 C 61 50.5 68 38 75.5 30.5 Z" fill="#C59C27" />
+                              <path d="M 44.5 87 C 47.5 88 53.5 88.5 58 85.5 C 62 83 65.5 79 68.5 74.5 C 63 77.5 55.5 79.5 49 81 C 46.5 81.8 45 84.5 44.5 87 Z" fill="#C59C27" />
+                              <path d="M 21.5 91 C 23.5 89 29 82.5 36.5 73 C 48.5 57 60 41 72.5 31.5 C 74 30.5 75.5 31.5 74.5 32.5 C 62.5 43 50.5 60.5 39 76 C 31 87.5 24 92 21.5 91 Z" fill="#FFFFFF" />
+                            </g>
+                          </svg>
+                        )}
+                        <div className="flex flex-col">
+                          <span className="text-[11px] font-black tracking-wider text-white truncate max-w-[150px]">
+                            {tempLogoText || "NOME DA MARCA"}
+                          </span>
+                          <span className="text-[8px] text-lime-400 font-bold tracking-wider uppercase font-mono truncate max-w-[150px]">
+                            {tempLogoSubtext || "Subtítulo da Marca"}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <div className="w-10 h-4 bg-white/5 rounded" />
+                        <div className="w-14 h-4 bg-lime-400/10 rounded" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Footer Preview Area */}
+                  <div className="p-4 bg-neutral-950/60 border border-white/5 rounded-2xl space-y-2">
+                    <span className="text-[9px] font-mono text-neutral-600 block">Pré-visualização do Rodapé</span>
+                    <div className="p-4 bg-neutral-900/20 rounded-xl border border-white/5 space-y-2">
+                      <div className="flex items-center gap-2">
+                        {tempLogoType === "image" && tempLogoUrl ? (
+                          <img 
+                            src={tempLogoUrl} 
+                            className="w-6 h-6 rounded object-contain bg-neutral-800" 
+                            alt="Logo preview footer" 
+                            referrerPolicy="no-referrer"
+                          />
+                        ) : (
+                          <svg 
+                            viewBox="0 0 100 100" 
+                            className="w-6 h-6 rounded overflow-hidden shadow-md" 
+                            fill="none" 
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <circle cx="50" cy="50" r="48" fill="#FFFFFF" />
+                            <g transform="translate(50, 50) scale(0.82) translate(-50, -50)">
+                              <path d="M 50 6 C 25.7 6 6 25.7 6 50 C 6 65.5 14 79.1 26.2 87.2 C 14.5 65.5 25.2 40.5 47.8 20.2 C 48.5 19.6 49.3 19 50 18.4 C 50 14.3 50 10.1 50 6 Z" fill="#0F3F8C" />
+                              <circle cx="54" cy="48" r="6.5" fill="#FFFFFF" />
+                              <path d="M 6.5 42 C 15 41.5 27 46 39.5 51 C 46 53.6 51 56 53.5 58 C 48.5 57.5 39.5 52.5 25 47 C 14.5 43 6.5 42 6.5 42 Z" fill="#FFFFFF" />
+                              <path d="M 52.5 57.5 C 49.5 54 41 49 28 44 C 33 46 40.5 50.5 47 55.5 C 50 58 52.5 61 52.5 61 Z" fill="#FFFFFF" />
+                              <path d="M 75.5 30.5 C 84.5 41.5 87.5 56.5 82.5 69.5 C 80.5 74 77.5 78 74 81.5 C 68.5 75 64 67.5 62.5 59 C 61 50.5 68 38 75.5 30.5 Z" fill="#C59C27" />
+                              <path d="M 44.5 87 C 47.5 88 53.5 88.5 58 85.5 C 62 83 65.5 79 68.5 74.5 C 63 77.5 55.5 79.5 49 81 C 46.5 81.8 45 84.5 44.5 87 Z" fill="#C59C27" />
+                              <path d="M 21.5 91 C 23.5 89 29 82.5 36.5 73 C 48.5 57 60 41 72.5 31.5 C 74 30.5 75.5 31.5 74.5 32.5 C 62.5 43 50.5 60.5 39 76 C 31 87.5 24 92 21.5 91 Z" fill="#FFFFFF" />
+                            </g>
+                          </svg>
+                        )}
+                        <span className="text-[11px] font-black text-white uppercase tracking-wider">
+                          {tempLogoText || "NOME DA MARCA"}
+                        </span>
+                      </div>
+                      <p className="text-[8px] text-neutral-500 font-mono">CURSO PRESENCIAL • FRANCA/SP</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-4 bg-lime-400/5 border border-lime-400/10 rounded-2xl">
+                  <div className="flex gap-2 items-start text-[11px] text-neutral-400 leading-relaxed font-sans">
+                    <Sparkles className="w-4 h-4 text-lime-400 shrink-0 mt-0.5" />
+                    <span>
+                      Dica: Para manter a consistência e a harmonia visual, prefira imagens de logotipo com fundo transparente (formato PNG) e que tenham boa legibilidade no tamanho de 32x32 pixels.
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
       </main>
+
+      {/* Testimonial Add/Edit Modal */}
+      {editingTestimonial && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4 overflow-y-auto py-10">
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setEditingTestimonial(null)} />
+          <motion.div
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="bg-neutral-900 border border-white/10 p-6 md:p-8 rounded-[2.5rem] max-w-xl w-full relative z-10 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto"
+          >
+            <button
+              onClick={() => setEditingTestimonial(null)}
+              className="absolute top-6 right-6 text-neutral-400 hover:text-white transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-lime-400" />
+                <h3 className="text-xl font-bold text-white uppercase tracking-wider">
+                  {editingTestimonial.isNew ? "Adicionar Depoimento" : "Editar Depoimento"}
+                </h3>
+              </div>
+              <p className="text-[11px] text-neutral-400 font-light">
+                {editingTestimonial.isNew ? "Cadastre as informações do novo depoente." : "Modifique os detalhes do depoimento selecionado."}
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[10px] font-mono font-bold tracking-widest text-neutral-500 uppercase block mb-1">
+                    Nome do Aluno
+                  </label>
+                  <input
+                    type="text"
+                    value={tempTestimonialName}
+                    onChange={(e) => setTempTestimonialName(e.target.value)}
+                    placeholder="Ex: Alexandre Malta"
+                    className="w-full bg-neutral-950 border border-white/10 focus:border-lime-400 rounded-xl py-3 px-4 text-xs text-white focus:outline-none transition-all font-sans"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-mono font-bold tracking-widest text-neutral-500 uppercase block mb-1">
+                    Cargo / Atuação Profissional
+                  </label>
+                  <input
+                    type="text"
+                    value={tempTestimonialRole}
+                    onChange={(e) => setTempTestimonialRole(e.target.value)}
+                    placeholder="Ex: Diretor de Engenharia @ TechCorp"
+                    className="w-full bg-neutral-950 border border-white/10 focus:border-lime-400 rounded-xl py-3 px-4 text-xs text-white focus:outline-none transition-all font-sans"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[10px] font-mono font-bold tracking-widest text-neutral-500 uppercase block mb-1">
+                    Avaliação (Estrelas)
+                  </label>
+                  <div className="flex items-center gap-1.5 py-1.5">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setTempTestimonialRating(star)}
+                        className="p-1 text-yellow-500 hover:scale-115 transition-transform cursor-pointer"
+                      >
+                        <svg
+                          className={`w-6 h-6 ${tempTestimonialRating >= star ? "fill-current" : "stroke-current fill-none"}`}
+                          viewBox="0 0 20 20"
+                        >
+                          <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+                        </svg>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-mono font-bold tracking-widest text-neutral-500 uppercase block mb-1">
+                    Frase de Destaque
+                  </label>
+                  <input
+                    type="text"
+                    value={tempTestimonialHighlight}
+                    onChange={(e) => setTempTestimonialHighlight(e.target.value)}
+                    placeholder="Ex: Curso transformador de carreira"
+                    className="w-full bg-neutral-950 border border-white/10 focus:border-lime-400 rounded-xl py-3 px-4 text-xs text-white focus:outline-none transition-all font-sans"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-mono font-bold tracking-widest text-neutral-500 uppercase block mb-1">
+                  Texto do Depoimento
+                </label>
+                <textarea
+                  value={tempTestimonialQuote}
+                  onChange={(e) => setTempTestimonialQuote(e.target.value)}
+                  placeholder="Insira o texto completo do depoimento do aluno..."
+                  rows={4}
+                  className="w-full bg-neutral-950 border border-white/10 focus:border-lime-400 rounded-xl py-3 px-4 text-xs text-white focus:outline-none transition-all font-sans resize-none leading-relaxed"
+                />
+              </div>
+
+              {/* Photo Upload Area */}
+              <div className="border-t border-white/5 pt-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-mono font-bold tracking-widest text-neutral-400 uppercase">
+                    Foto do Aluno
+                  </span>
+                  {tempTestimonialImage && (
+                    <button
+                      type="button"
+                      onClick={() => setTempTestimonialImage("")}
+                      className="text-[10px] text-red-400 font-mono font-bold hover:underline cursor-pointer"
+                    >
+                      Remover Foto
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-full border border-white/10 overflow-hidden bg-neutral-950 flex items-center justify-center text-neutral-600 font-mono text-lg shrink-0">
+                    {tempTestimonialImage ? (
+                      <img src={tempTestimonialImage} alt="Preview" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                    ) : (
+                      "?"
+                    )}
+                  </div>
+                  <div className="flex-1 space-y-2">
+                    <input
+                      type="text"
+                      value={tempTestimonialImage}
+                      onChange={(e) => setTempTestimonialImage(e.target.value)}
+                      placeholder="Cole a URL de uma foto"
+                      className="w-full bg-neutral-950 border border-white/10 focus:border-lime-400 rounded-xl py-2 px-3 text-xs text-white focus:outline-none transition-all font-mono"
+                    />
+                    <div className="relative border border-dashed border-white/10 hover:border-lime-400/40 rounded-xl p-3 transition-all bg-neutral-950/40 flex items-center justify-center gap-2 cursor-pointer">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleTestimonialImageUpload}
+                        className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                      />
+                      <Upload className={`w-4 h-4 ${isUploadingTestimonialImage ? "animate-bounce text-lime-400" : "text-neutral-500"}`} />
+                      <span className="text-[10px] text-neutral-400">
+                        {isUploadingTestimonialImage ? "Processando imagem..." : "Ou faça upload do computador (Até 3MB)"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                {testimonialImageUploadError && (
+                  <p className="text-[10px] text-red-400 font-mono">⚠️ {testimonialImageUploadError}</p>
+                )}
+              </div>
+
+              {/* Video Configuration Area */}
+              <div className="border-t border-white/5 pt-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-mono font-bold tracking-widest text-neutral-400 uppercase">
+                    Vídeo do Depoimento (Opcional)
+                  </span>
+                  {tempTestimonialVideoUrl && (
+                    <button
+                      type="button"
+                      onClick={() => setTempTestimonialVideoUrl("")}
+                      className="text-[10px] text-red-400 font-mono font-bold hover:underline cursor-pointer"
+                    >
+                      Remover Vídeo
+                    </button>
+                  )}
+                </div>
+
+                <input
+                  type="text"
+                  value={tempTestimonialVideoUrl}
+                  onChange={(e) => setTempTestimonialVideoUrl(e.target.value)}
+                  placeholder="Cole o link do vídeo (Ex: YouTube, Vimeo ou link direto .mp4)"
+                  className="w-full bg-neutral-950 border border-white/10 focus:border-lime-400 rounded-xl py-3 px-4 text-xs text-white focus:outline-none transition-all font-sans"
+                />
+
+                <div className="relative border border-dashed border-white/10 hover:border-lime-400/40 rounded-xl p-3.5 transition-all bg-neutral-950/40 flex flex-col items-center justify-center gap-1.5 cursor-pointer text-center">
+                  <input
+                    type="file"
+                    accept="video/*"
+                    onChange={handleTestimonialVideoUpload}
+                    className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                  />
+                  <Upload className={`w-4 h-4 ${isUploadingTestimonialVideo ? "animate-bounce text-lime-400" : "text-neutral-500"}`} />
+                  <span className="text-[10px] text-neutral-400">
+                    {isUploadingTestimonialVideo ? "Enviando arquivo de vídeo..." : "Ou carregue um vídeo curto do computador (Até 15MB)"}
+                  </span>
+                </div>
+                {testimonialVideoUploadError && (
+                  <p className="text-[10px] text-red-400 font-mono">⚠️ {testimonialVideoUploadError}</p>
+                )}
+              </div>
+            </div>
+
+            {/* Actions Footer */}
+            <div className="flex gap-3 pt-4 border-t border-white/5">
+              <button
+                type="button"
+                onClick={() => setEditingTestimonial(null)}
+                className="flex-1 px-4 py-3 rounded-xl border border-white/5 bg-neutral-850 hover:bg-neutral-800 text-xs font-bold text-white font-mono uppercase tracking-wider transition-all cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveTestimonialItem}
+                disabled={isSavingTestimonials}
+                className="flex-1 bg-gradient-to-r from-lime-400 to-lime-500 text-neutral-950 px-4 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:brightness-110 disabled:opacity-50 active:scale-98 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                {isSavingTestimonials ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    <span>Salvando...</span>
+                  </>
+                ) : (
+                  <>
+                    <Check className="w-4 h-4" />
+                    <span>Salvar Depoimento</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
 
       {/* Learning Module Edit Modal */}
       {editingModule && (

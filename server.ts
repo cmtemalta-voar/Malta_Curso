@@ -244,6 +244,55 @@ ALTER TABLE registrations DISABLE ROW LEVEL SECURITY;
     }
   });
 
+  // API Route: Get registration counts per location
+  app.get("/api/registration-counts", async (req, res) => {
+    try {
+      const client = getSupabase();
+      let registrations: any[] = [];
+      if (client) {
+        const { data, error } = await client
+          .from("registrations")
+          .select("location");
+
+        if (error) throw error;
+        registrations = data || [];
+      } else {
+        registrations = inMemoryLeads;
+      }
+
+      // Calculate counts
+      const counts: Record<string, { registered: number; capacity: number; remaining: number }> = {
+        sicchierolli: { registered: 0, capacity: 30, remaining: 30 },
+        fatec: { registered: 0, capacity: 35, remaining: 35 }
+      };
+
+      registrations.forEach((reg: any) => {
+        if (reg && reg.location && counts[reg.location]) {
+          counts[reg.location].registered += 1;
+        }
+      });
+
+      // Update remaining seats
+      Object.keys(counts).forEach(key => {
+        const item = counts[key];
+        item.remaining = Math.max(0, item.capacity - item.registered);
+      });
+
+      return res.json({ success: true, data: counts });
+    } catch (err: any) {
+      console.error("Error getting registration counts:", err);
+      // Fallback response so app never crashes
+      return res.json({
+        success: true,
+        data: {
+          sicchierolli: { registered: 0, capacity: 30, remaining: 30 },
+          fatec: { registered: 0, capacity: 35, remaining: 35 }
+        },
+        error: err.message
+      });
+    }
+  });
+
   // Administrator password verification helper
   function verifyAdminPassword(req: express.Request) {
     const submitted = req.headers["x-admin-password"] as string || req.query.password as string;
@@ -320,6 +369,90 @@ ALTER TABLE registrations DISABLE ROW LEVEL SECURITY;
     } catch (err: any) {
       console.error("Error saving locations config:", err);
       return res.status(500).json({ success: false, message: "Erro ao salvar configurações de locais no servidor.", error: err.message });
+    }
+  });
+
+  // API Route: Get testimonials config
+  app.get("/api/testimonials", (req, res) => {
+    const filePath = path.join(process.cwd(), "testimonials.json");
+    try {
+      if (fs.existsSync(filePath)) {
+        const fileContent = fs.readFileSync(filePath, "utf-8");
+        const testimonials = JSON.parse(fileContent);
+        return res.json({ success: true, data: testimonials });
+      }
+      return res.status(404).json({ success: false, message: "Arquivo de configuração de depoimentos não encontrado." });
+    } catch (err: any) {
+      console.error("Error reading testimonials config:", err);
+      return res.status(500).json({ success: false, message: "Erro ao ler configurações de depoimentos.", error: err.message });
+    }
+  });
+
+  // API Route: Update testimonials config
+  app.put("/api/testimonials", (req, res) => {
+    if (!verifyAdminPassword(req)) {
+      return res.status(401).json({ success: false, message: "Não autorizado. Senha administrativa inválida." });
+    }
+    const { sectionSettings, items } = req.body;
+    if (!sectionSettings || !Array.isArray(items)) {
+      return res.status(400).json({ success: false, message: "Formato de depoimentos inválido." });
+    }
+
+    const filePath = path.join(process.cwd(), "testimonials.json");
+    try {
+      fs.writeFileSync(filePath, JSON.stringify({ sectionSettings, items }, null, 2), "utf-8");
+      return res.json({ success: true, message: "Depoimentos salvos com sucesso!" });
+    } catch (err: any) {
+      console.error("Error saving testimonials config:", err);
+      return res.status(500).json({ success: false, message: "Erro ao salvar depoimentos no servidor.", error: err.message });
+    }
+  });
+
+  // API Route: Get branding config
+  app.get("/api/branding", (req, res) => {
+    const filePath = path.join(process.cwd(), "branding_config.json");
+    try {
+      if (fs.existsSync(filePath)) {
+        const fileContent = fs.readFileSync(filePath, "utf-8");
+        const branding = JSON.parse(fileContent);
+        return res.json({ success: true, data: branding });
+      }
+      
+      // Default config
+      const defaultConfig = {
+        logoType: "svg",
+        logoUrl: "",
+        logoText: "ALEXANDRE MALTA",
+        logoSubtext: "Processos Ágeis com IA"
+      };
+      fs.writeFileSync(filePath, JSON.stringify(defaultConfig, null, 2), "utf-8");
+      return res.json({ success: true, data: defaultConfig });
+    } catch (err: any) {
+      console.error("Error reading branding config:", err);
+      return res.status(500).json({ success: false, message: "Erro ao ler configurações de branding.", error: err.message });
+    }
+  });
+
+  // API Route: Update branding config
+  app.put("/api/branding", (req, res) => {
+    if (!verifyAdminPassword(req)) {
+      return res.status(401).json({ success: false, message: "Não autorizado. Senha administrativa inválida." });
+    }
+    const { logoType, logoUrl, logoText, logoSubtext } = req.body;
+    
+    const filePath = path.join(process.cwd(), "branding_config.json");
+    try {
+      const branding = {
+        logoType: logoType || "svg",
+        logoUrl: logoUrl || "",
+        logoText: logoText || "ALEXANDRE MALTA",
+        logoSubtext: logoSubtext || "Processos Ágeis com IA"
+      };
+      fs.writeFileSync(filePath, JSON.stringify(branding, null, 2), "utf-8");
+      return res.json({ success: true, message: "Configurações de marca e logo salvas com sucesso!" });
+    } catch (err: any) {
+      console.error("Error saving branding config:", err);
+      return res.status(500).json({ success: false, message: "Erro ao salvar configurações de branding.", error: err.message });
     }
   });
 

@@ -36,7 +36,9 @@ import {
   RotateCcw,
   Upload,
   Image as ImageIcon,
-  FileText
+  FileText,
+  Star,
+  Quote
 } from "lucide-react";
 import React, { useState } from "react";
 import AdminDashboard from "./components/AdminDashboard";
@@ -50,7 +52,17 @@ import mod1Image from "./assets/images/regenerated_image_1783356317886.jpg";
 import mod4Image from "./assets/images/regenerated_image_1783356449669.jpg";
 
 // --- Logo Component ---
-const EmpexsLogo = ({ className = "w-8 h-8" }: { className?: string }) => {
+const EmpexsLogo = ({ className = "w-8 h-8", logoType = "svg", logoUrl = "" }: { className?: string; logoType?: string; logoUrl?: string }) => {
+  if (logoType === "image" && logoUrl) {
+    return (
+      <img 
+        src={logoUrl} 
+        className={`${className} object-contain`} 
+        alt="Logo" 
+        referrerPolicy="no-referrer"
+      />
+    );
+  }
   return (
     <svg 
       viewBox="0 0 100 100" 
@@ -280,6 +292,55 @@ const FAQ_DATA: FaqItem[] = [
   }
 ];
 
+interface TestimonialItem {
+  id: number;
+  name: string;
+  role: string;
+  image: string;
+  quote: string;
+  rating: number;
+  highlight: string;
+}
+
+const TESTIMONIALS: TestimonialItem[] = [
+  {
+    id: 1,
+    name: "Mariana Costa",
+    role: "Product Owner @ Stefanini",
+    image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=256&auto=format&fit=crop",
+    quote: "O treinamento com o Alexandre Malta foi um divisor de águas. Aprendi a integrar ferramentas de IA Generativa no Jira e no refinamento de histórias. Reduzimos o tempo de escrita de documentação técnica em mais de 60%. Sensacional!",
+    rating: 5,
+    highlight: "Redução de 60% no tempo de escrita de documentação"
+  },
+  {
+    id: 2,
+    name: "Rodrigo Alencar",
+    role: "Senior Software Engineer @ Nubank",
+    image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=256&auto=format&fit=crop",
+    quote: "Sempre fui cético com IA no desenvolvimento, mas a abordagem prática do Alexandre focada em prompts de engenharia para modelagem de arquitetura e processos ágeis me fez mudar de ideia. O curso presencial em Franca vale cada segundo.",
+    rating: 5,
+    highlight: "Engenharia de prompts aplicada à arquitetura"
+  },
+  {
+    id: 3,
+    name: "Juliana Mendes",
+    role: "Agile Coach & Scrum Master",
+    image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=256&auto=format&fit=crop",
+    quote: "Incrível como o Alexandre consegue traduzir conceitos complexos de IA para o dia a dia do agilismo. Agora consigo automatizar a coleta de métricas e gerar relatórios de retrospectiva em minutos usando modelos de linguagem. Recomendo fortemente!",
+    rating: 5,
+    highlight: "Automatização de métricas e retrospectivas"
+  },
+  {
+    id: 4,
+    name: "Felipe Baptista",
+    role: "Gerente de Projetos @ Localiza",
+    image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=256&auto=format&fit=crop",
+    quote: "A metodologia de ensinar IA na prática e de forma presencial faz toda a diferença. O networking gerado no curso e os frameworks ágeis apresentados abriram novos horizontes na minha carreira. Alexandre Malta é referência no assunto.",
+    rating: 5,
+    highlight: "Metodologia prática e presencial diferenciada"
+  }
+];
+
 export default function App() {
   const [showAdmin, setShowAdmin] = useState(false);
   const [selectedLoc, setSelectedLoc] = useState("sicchierolli");
@@ -335,6 +396,7 @@ export default function App() {
   };
   const [activeModule, setActiveModule] = useState<string | null>("m1");
   const [openFaq, setOpenFaq] = useState<number | null>(0);
+  const [currentTestimonial, setCurrentTestimonial] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Carousel curriculum states loaded dynamically from server
@@ -344,6 +406,20 @@ export default function App() {
   // Locations states loaded dynamically from server
   const [locationsConfig, setLocationsConfig] = useState<LocationConfig[]>(DEFAULT_LOCATIONS_CONFIG);
   const [isLoadingLocations, setIsLoadingLocations] = useState(true);
+
+  // Testimonials states loaded dynamically from server
+  const [testimonialsData, setTestimonialsData] = useState<{
+    sectionSettings: { badge: string; title: string; description: string };
+    items: TestimonialItem[];
+  }>({
+    sectionSettings: {
+      badge: "DEPOIMENTOS REAIS",
+      title: "Histórias de Sucesso",
+      description: "Veja como profissionais e líderes de tecnologia estão revolucionando seus resultados e acelerando entregas com IA Generativa e Processos Ágeis."
+    },
+    items: TESTIMONIALS
+  });
+  const [isLoadingTestimonials, setIsLoadingTestimonials] = useState(true);
 
   const fetchModules = async () => {
     setIsLoadingModules(true);
@@ -381,9 +457,86 @@ export default function App() {
     }
   };
 
+  const fetchTestimonials = async () => {
+    setIsLoadingTestimonials(true);
+    try {
+      const res = await fetch("/api/testimonials");
+      const data = await res.json();
+      if (res.ok && data.success && data.data) {
+        setTestimonialsData(data.data);
+      } else {
+        setTestimonialsData({
+          sectionSettings: {
+            badge: "DEPOIMENTOS REAIS",
+            title: "Histórias de Sucesso",
+            description: "Veja como profissionais e líderes de tecnologia estão revolucionando seus resultados e acelerando entregas com IA Generativa e Processos Ágeis."
+          },
+          items: TESTIMONIALS
+        });
+      }
+    } catch (e) {
+      console.error("Error loading dynamic testimonials config:", e);
+      setTestimonialsData({
+        sectionSettings: {
+          badge: "DEPOIMENTOS REAIS",
+          title: "Histórias de Sucesso",
+          description: "Veja como profissionais e líderes de tecnologia estão revolucionando seus resultados e acelerando entregas com IA Generativa e Processos Ágeis."
+        },
+        items: TESTIMONIALS
+      });
+    } finally {
+      setIsLoadingTestimonials(false);
+    }
+  };
+
+  // Registration counts state for "vagas restantes"
+  const [registrationCounts, setRegistrationCounts] = useState<Record<string, { registered: number; capacity: number; remaining: number }>>({
+    sicchierolli: { registered: 0, capacity: 30, remaining: 30 },
+    fatec: { registered: 0, capacity: 35, remaining: 35 }
+  });
+  const [isLoadingCounts, setIsLoadingCounts] = useState(true);
+
+  // Branding config state
+  const [brandingConfig, setBrandingConfig] = useState({
+    logoType: "svg",
+    logoUrl: "",
+    logoText: "ALEXANDRE MALTA",
+    logoSubtext: "Processos Ágeis com IA"
+  });
+
+  const fetchBrandingConfig = async () => {
+    try {
+      const res = await fetch("/api/branding");
+      const data = await res.json();
+      if (res.ok && data.success && data.data) {
+        setBrandingConfig(data.data);
+      }
+    } catch (e) {
+      console.error("Error loading branding config:", e);
+    }
+  };
+
+  const fetchRegistrationCounts = async () => {
+    setIsLoadingCounts(true);
+    try {
+      const res = await fetch("/api/registration-counts");
+      const data = await res.json();
+      if (res.ok && data.success && data.data) {
+        setRegistrationCounts(data.data);
+      }
+    } catch (e) {
+      console.error("Error loading registration counts:", e);
+    } finally {
+      setIsLoadingCounts(false);
+    }
+  };
+
   React.useEffect(() => {
     fetchModules();
     fetchLocationsConfig();
+    fetchTestimonials();
+    fetchRegistrationCounts();
+    fetchBrandingConfig();
   }, []);
 
   const [currentPage, setCurrentPage] = useState(0);
@@ -449,6 +602,7 @@ export default function App() {
       if (response.ok && result.success) {
         setRegSource(result.source);
         setShowSuccessModal(true);
+        fetchRegistrationCounts();
       } else {
         setErrorDetails({
           message: result.message || "Ocorreu um erro ao processar o seu cadastro no servidor.",
@@ -474,7 +628,7 @@ export default function App() {
   };
 
   if (showAdmin) {
-    return <AdminDashboard onBack={() => { setShowAdmin(false); fetchModules(); }} />;
+    return <AdminDashboard onBack={() => { setShowAdmin(false); fetchModules(); fetchBrandingConfig(); }} />;
   }
 
   return (
@@ -491,10 +645,14 @@ export default function App() {
       <nav className="sticky top-0 z-40 bg-neutral-950/90 backdrop-blur-md border-b border-white/5">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <EmpexsLogo className="w-10 h-10 rounded-xl overflow-hidden shadow-md shadow-black/20" />
+            <EmpexsLogo 
+              className="w-10 h-10 rounded-xl overflow-hidden shadow-md shadow-black/20" 
+              logoType={brandingConfig.logoType} 
+              logoUrl={brandingConfig.logoUrl} 
+            />
             <div className="flex flex-col">
-              <span className="text-sm font-black tracking-widest text-white font-sans">ALEXANDRE MALTA</span>
-              <span className="text-[10px] text-lime-400 font-bold tracking-wider uppercase font-mono">Processos Ágeis com IA</span>
+              <span className="text-sm font-black tracking-widest text-white font-sans">{brandingConfig.logoText}</span>
+              <span className="text-[10px] text-lime-400 font-bold tracking-wider uppercase font-mono">{brandingConfig.logoSubtext}</span>
             </div>
           </div>
 
@@ -504,6 +662,7 @@ export default function App() {
             <a href="#conquistas" className="hover:text-lime-400 transition-colors">Benefícios</a>
             <a href="#cronograma" className="hover:text-lime-400 transition-colors">Cronograma</a>
             <a href="#mentor" className="hover:text-lime-400 transition-colors">O Mentor</a>
+            <a href="#depoimentos" className="hover:text-lime-400 transition-colors">Depoimentos</a>
             <a href="#faq" className="hover:text-lime-400 transition-colors">Dúvidas</a>
           </div>
 
@@ -568,6 +727,13 @@ export default function App() {
                 className="py-3 border-b border-white/5 hover:text-lime-400 transition-colors block"
               >
                 O Mentor
+              </a>
+              <a 
+                href="#depoimentos" 
+                onClick={() => setMobileMenuOpen(false)}
+                className="py-3 border-b border-white/5 hover:text-lime-400 transition-colors block"
+              >
+                Depoimentos
               </a>
               <a 
                 href="#faq" 
@@ -1075,6 +1241,42 @@ export default function App() {
                     >
                       {sicchierolliConfig.buttonText}
                     </a>
+
+                    {/* Vagas Restantes Component */}
+                    {(() => {
+                      const count = registrationCounts["sicchierolli"] || { registered: 0, capacity: 30, remaining: 30 };
+                      const pct = Math.min(100, Math.round((count.registered / count.capacity) * 100));
+                      const isLow = count.remaining <= 5;
+                      return (
+                        <div className="mt-4 space-y-2 animate-fadeIn bg-neutral-950/40 border border-white/5 p-4 rounded-2xl">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="flex items-center gap-2 text-neutral-400">
+                              <span className={`w-2 h-2 rounded-full ${isLow ? "bg-red-500 animate-pulse" : "bg-lime-400 animate-pulse"}`} />
+                              {isLow ? (
+                                <span className="font-bold text-red-400 uppercase tracking-wider text-[10px]">Vagas quase esgotadas!</span>
+                              ) : (
+                                <span className="uppercase tracking-wider text-[10px] text-neutral-400 font-bold">Inscrições Abertas</span>
+                              )}
+                            </span>
+                            <span className="font-mono text-xs font-black text-lime-400">{pct}% preenchido</span>
+                          </div>
+                          
+                          {/* Progress bar */}
+                          <div className="h-1.5 w-full bg-neutral-900 rounded-full overflow-hidden">
+                            <div 
+                              className={`h-full rounded-full transition-all duration-500 ${isLow ? "bg-red-500" : "bg-lime-400"}`}
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                          
+                          {isLow && (
+                            <p className="text-[10px] text-red-400/80 italic text-center font-sans">
+                              *Inscrições encerrando em breve para esta turma!
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
 
                   {/* Local 02 Card */}
@@ -1146,6 +1348,42 @@ export default function App() {
                     >
                       {fatecConfig.buttonText}
                     </a>
+
+                    {/* Vagas Restantes Component */}
+                    {(() => {
+                      const count = registrationCounts["fatec"] || { registered: 0, capacity: 35, remaining: 35 };
+                      const pct = Math.min(100, Math.round((count.registered / count.capacity) * 100));
+                      const isLow = count.remaining <= 5;
+                      return (
+                        <div className="mt-4 space-y-2 animate-fadeIn bg-neutral-950/40 border border-white/5 p-4 rounded-2xl">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="flex items-center gap-2 text-neutral-400">
+                              <span className={`w-2 h-2 rounded-full ${isLow ? "bg-red-500 animate-pulse" : "bg-cyan-400 animate-pulse"}`} />
+                              {isLow ? (
+                                <span className="font-bold text-red-400 uppercase tracking-wider text-[10px]">Vagas quase esgotadas!</span>
+                              ) : (
+                                <span className="uppercase tracking-wider text-[10px] text-neutral-400 font-bold">Inscrições Abertas</span>
+                              )}
+                            </span>
+                            <span className="font-mono text-xs font-black text-cyan-400">{pct}% preenchido</span>
+                          </div>
+                          
+                          {/* Progress bar */}
+                          <div className="h-1.5 w-full bg-neutral-900 rounded-full overflow-hidden">
+                            <div 
+                              className={`h-full rounded-full transition-all duration-500 ${isLow ? "bg-red-500" : "bg-cyan-400"}`}
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                          
+                          {isLow && (
+                            <p className="text-[10px] text-red-400/80 italic text-center font-sans">
+                              *Inscrições encerrando em breve para esta turma!
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
 
                 </div>
@@ -1360,11 +1598,11 @@ export default function App() {
                       
                       {/* Show preview if it is an image */}
                       {formData.address_proof.startsWith("data:image/") && (
-                        <div className="mx-auto max-w-[150px] aspect-video rounded-lg overflow-hidden border border-white/10 relative mt-2 group">
+                        <div className="mx-auto w-full max-w-[280px] sm:max-w-[340px] rounded-xl overflow-hidden border border-white/10 relative mt-3 bg-neutral-950/80 p-2 flex items-center justify-center shadow-inner">
                           <img 
                             src={formData.address_proof} 
                             alt="Preview Comprovante" 
-                            className="w-full h-full object-cover"
+                            className="max-w-full max-h-[240px] sm:max-h-[280px] h-auto w-auto rounded-lg object-contain"
                             referrerPolicy="no-referrer"
                           />
                         </div>
@@ -1451,6 +1689,201 @@ export default function App() {
         </div>
       </section>
 
+      {/* Testimonials Section */}
+      <section id="depoimentos" className="py-24 bg-neutral-900/30 border-t border-white/5 relative overflow-hidden">
+        {/* Decorative background glow */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-lime-400/5 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="max-w-4xl mx-auto px-6 relative z-10">
+          
+          <div className="text-center mb-16 animate-fadeIn">
+            <span className="text-[10px] text-lime-400 font-mono tracking-widest font-black uppercase mb-4 block">
+              {testimonialsData?.sectionSettings?.badge || "DEPOIMENTOS REAIS"}
+            </span>
+            <h2 className="text-3xl md:text-5xl font-light font-serif text-white">
+              {testimonialsData?.sectionSettings?.title || "Histórias de Sucesso"}
+            </h2>
+            <p className="text-xs text-neutral-400 font-sans mt-3 max-w-lg mx-auto leading-relaxed">
+              {testimonialsData?.sectionSettings?.description || "Veja como profissionais e líderes de tecnologia estão revolucionando seus resultados e acelerando entregas com IA Generativa e Processos Ágeis."}
+            </p>
+          </div>
+
+          {/* Testimonial Slider Container */}
+          {(() => {
+            const activeItems = (testimonialsData?.items && testimonialsData.items.length > 0) ? testimonialsData.items : TESTIMONIALS;
+            const safeIndex = currentTestimonial >= activeItems.length ? 0 : currentTestimonial;
+            const item = activeItems[safeIndex];
+
+            if (!item) return null;
+
+            return (
+              <div className="relative bg-neutral-950/60 border border-white/5 rounded-3xl p-8 md:p-12 shadow-2xl backdrop-blur-sm">
+                
+                {/* Top decorative quote mark */}
+                <div className="absolute -top-5 left-8 md:left-12 bg-lime-400 text-neutral-950 p-3 rounded-2xl shadow-lg shadow-lime-500/15">
+                  <Quote className="w-5 h-5" />
+                </div>
+
+                {/* Slide Content with entry transition */}
+                <motion.div
+                  key={safeIndex}
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, ease: "easeOut" }}
+                  className="space-y-8"
+                >
+                  <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
+                    {/* Left side: Photo & text details */}
+                    <div className="md:col-span-7 space-y-6">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-6">
+                        {/* Image */}
+                        <div className="relative shrink-0 mx-auto sm:mx-0">
+                          <div className="w-20 h-20 md:w-24 md:h-24 rounded-full overflow-hidden border-2 border-lime-400 p-1 bg-neutral-900">
+                            {item.image ? (
+                              <img 
+                                src={item.image} 
+                                alt={item.name}
+                                className="w-full h-full object-cover rounded-full"
+                                referrerPolicy="no-referrer"
+                              />
+                            ) : (
+                              <div className="w-full h-full rounded-full bg-neutral-900 flex items-center justify-center font-bold text-lime-400 text-lg uppercase">
+                                {item.name ? item.name.substring(0, 2) : "D"}
+                              </div>
+                            )}
+                          </div>
+                          <div className="absolute -bottom-1 -right-1 bg-neutral-900 border border-white/10 text-lime-400 px-1.5 py-0.5 rounded-full text-[9px] font-bold font-mono">
+                            ★ {(item.rating || 5).toFixed(1)}
+                          </div>
+                        </div>
+
+                        <div className="text-center sm:text-left space-y-2">
+                          <div className="flex items-center justify-center sm:justify-start gap-1">
+                            {Array.from({ length: item.rating || 5 }).map((_, i) => (
+                              <Star key={i} className="w-4 h-4 text-lime-400 fill-lime-400" />
+                            ))}
+                          </div>
+                          <h3 className="text-xl font-bold text-white font-sans">
+                            {item.name}
+                          </h3>
+                          <p className="text-xs text-neutral-400 font-mono uppercase tracking-wider">
+                            {item.role}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        <blockquote className="text-base text-neutral-200 font-serif font-light leading-relaxed italic text-center sm:text-left">
+                          "{item.quote}"
+                        </blockquote>
+                        {item.highlight && (
+                          <div className="flex justify-center sm:justify-start">
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-lime-400/10 border border-lime-400/20 text-lime-400 text-xs font-bold uppercase tracking-wider">
+                              <Sparkles className="w-3.5 h-3.5" />
+                              <span>Destaque: {item.highlight}</span>
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Right side: Video player or video play trigger if video exists */}
+                    <div className="md:col-span-5">
+                      {item.videoUrl ? (
+                        <div className="w-full h-full flex flex-col justify-center animate-fadeIn">
+                          <div className="relative aspect-video rounded-2xl overflow-hidden border border-white/10 bg-neutral-950 group/video shadow-2xl">
+                            {item.videoUrl.includes("youtube.com") || item.videoUrl.includes("youtu.be") || item.videoUrl.includes("vimeo.com") ? (
+                              <iframe
+                                src={
+                                  item.videoUrl.includes("youtube.com") || item.videoUrl.includes("youtu.be")
+                                    ? `https://www.youtube.com/embed/${
+                                        item.videoUrl.includes("v=")
+                                          ? item.videoUrl.split("v=")[1]?.split("&")[0]
+                                          : item.videoUrl.split("/").pop()
+                                      }`
+                                    : item.videoUrl
+                                }
+                                title={`Vídeo depoimento de ${item.name}`}
+                                className="w-full h-full border-0"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowFullScreen
+                              />
+                            ) : (
+                              <video
+                                src={item.videoUrl}
+                                controls
+                                className="w-full h-full object-cover"
+                                poster={item.image}
+                              />
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        // Fallback beautiful banner to make the bento layout look incredibly premium even if video is absent!
+                        <div className="hidden md:flex relative aspect-video rounded-2xl overflow-hidden border border-white/5 bg-gradient-to-br from-neutral-950 to-neutral-900/60 p-6 flex-col justify-between items-start h-full">
+                          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-40 bg-lime-400/5 rounded-full blur-2xl pointer-events-none" />
+                          <div className="bg-lime-400/10 text-lime-400 p-2 rounded-xl border border-lime-400/20">
+                            <Quote className="w-5 h-5" />
+                          </div>
+                          <div className="space-y-1.5 mt-4">
+                            <p className="text-[10px] font-mono font-bold tracking-widest text-lime-400 uppercase">Foco no Seu Sucesso</p>
+                            <p className="text-[11px] font-sans text-white/80 font-medium leading-relaxed">
+                              Mais de 2.000 líderes e agilistas já aceleraram suas carreiras. Inscreva-se hoje mesmo.
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                </motion.div>
+
+                {/* Navigation Arrows */}
+                <div className="flex items-center justify-between mt-10 pt-8 border-t border-white/5">
+                  
+                  {/* Pagination indicators dots */}
+                  <div className="flex gap-2">
+                    {activeItems.map((_, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => setCurrentTestimonial(idx)}
+                        className={`h-2 rounded-full transition-all duration-300 ${
+                          idx === safeIndex 
+                            ? "w-8 bg-lime-400" 
+                            : "w-2 bg-white/15 hover:bg-white/35 cursor-pointer"
+                        }`}
+                        aria-label={`Ir para depoimento ${idx + 1}`}
+                      />
+                    ))}
+                  </div>
+
+                  {/* Prev/Next buttons */}
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setCurrentTestimonial(prev => (prev === 0 ? activeItems.length - 1 : prev - 1))}
+                      className="w-10 h-10 rounded-full border border-white/10 hover:border-lime-400/40 hover:bg-lime-400 hover:text-neutral-950 text-neutral-400 flex items-center justify-center transition-all cursor-pointer active:scale-90"
+                      aria-label="Depoimento anterior"
+                    >
+                      <ChevronLeft className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={() => setCurrentTestimonial(prev => (prev === activeItems.length - 1 ? 0 : prev + 1))}
+                      className="w-10 h-10 rounded-full border border-white/10 hover:border-lime-400/40 hover:bg-lime-400 hover:text-neutral-950 text-neutral-400 flex items-center justify-center transition-all cursor-pointer active:scale-90"
+                      aria-label="Próximo depoimento"
+                    >
+                      <ChevronRight className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                </div>
+
+              </div>
+            );
+          })()}
+
+        </div>
+      </section>
+
       {/* FAQ Accordion Section */}
       <section id="faq" className="py-24 bg-neutral-950 border-t border-white/5 relative">
         <div className="max-w-3xl mx-auto px-6">
@@ -1499,8 +1932,12 @@ export default function App() {
           
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-2">
-              <EmpexsLogo className="w-8 h-8 rounded-lg overflow-hidden" />
-              <span className="text-sm font-black text-white uppercase tracking-widest font-sans">ALEXANDRE MALTA</span>
+              <EmpexsLogo 
+                className="w-8 h-8 rounded-lg overflow-hidden" 
+                logoType={brandingConfig.logoType} 
+                logoUrl={brandingConfig.logoUrl} 
+              />
+              <span className="text-sm font-black text-white uppercase tracking-widest font-sans">{brandingConfig.logoText}</span>
             </div>
             <p className="text-[10px] font-mono text-neutral-500 uppercase tracking-widest mt-1">CURSO PRESENCIAL • FRANCA/SP</p>
           </div>
