@@ -24,6 +24,8 @@ import {
   MessageSquare,
   Server,
   Edit3,
+  Plus,
+  Pencil,
   Upload,
   Image as ImageIcon,
   RotateCcw,
@@ -192,6 +194,22 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
   const [tempLogoSubtext, setTempLogoSubtext] = useState("");
   const [isUploadingLogoImage, setIsUploadingLogoImage] = useState(false);
   const [logoImageUploadError, setLogoImageUploadError] = useState("");
+
+  // Lead CRUD states
+  const [isLeadModalOpen, setIsLeadModalOpen] = useState(false);
+  const [editingLead, setEditingLead] = useState<any | null>(null);
+  const [tempLeadName, setTempLeadName] = useState("");
+  const [tempLeadEmail, setTempLeadEmail] = useState("");
+  const [tempLeadWhatsapp, setTempLeadWhatsapp] = useState("");
+  const [tempLeadRole, setTempLeadRole] = useState("");
+  const [tempLeadLocation, setTempLeadLocation] = useState("sicchierolli");
+  const [tempLeadCpf, setTempLeadCpf] = useState("");
+  const [tempLeadAddressProof, setTempLeadAddressProof] = useState("");
+  const [tempLeadAgree, setTempLeadAgree] = useState(true);
+  const [isSavingLead, setIsSavingLead] = useState(false);
+  const [leadError, setLeadError] = useState("");
+  const [isUploadingLeadProof, setIsUploadingLeadProof] = useState(false);
+  const [leadProofError, setLeadProofError] = useState("");
 
   const fetchBrandingConfig = async () => {
     setIsLoadingBranding(true);
@@ -803,6 +821,109 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
     }
   };
 
+  const openAddLeadModal = () => {
+    setEditingLead(null);
+    setTempLeadName("");
+    setTempLeadEmail("");
+    setTempLeadWhatsapp("");
+    setTempLeadRole("");
+    setTempLeadLocation("sicchierolli");
+    setTempLeadCpf("");
+    setTempLeadAddressProof("");
+    setTempLeadAgree(true);
+    setLeadError("");
+    setLeadProofError("");
+    setIsLeadModalOpen(true);
+  };
+
+  const openEditLeadModal = (lead: any) => {
+    setEditingLead(lead);
+    setTempLeadName(lead.name || "");
+    setTempLeadEmail(lead.email || "");
+    setTempLeadWhatsapp(lead.whatsapp || "");
+    setTempLeadRole(lead.role || "");
+    setTempLeadLocation(lead.location || "sicchierolli");
+    setTempLeadCpf(lead.cpf || "");
+    setTempLeadAddressProof(lead.address_proof || "");
+    setTempLeadAgree(lead.agree !== false);
+    setLeadError("");
+    setLeadProofError("");
+    setIsLeadModalOpen(true);
+  };
+
+  const handleSaveLead = async () => {
+    setLeadError("");
+    if (!tempLeadName || !tempLeadEmail || !tempLeadWhatsapp) {
+      setLeadError("Nome, E-mail e WhatsApp são obrigatórios.");
+      return;
+    }
+
+    setIsSavingLead(true);
+    try {
+      const url = editingLead ? `/api/registrations/${editingLead.id}` : "/api/registrations";
+      const method = editingLead ? "PUT" : "POST";
+
+      const res = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-password": password
+        },
+        body: JSON.stringify({
+          name: tempLeadName,
+          email: tempLeadEmail,
+          whatsapp: tempLeadWhatsapp,
+          role: tempLeadRole || null,
+          location: tempLeadLocation,
+          cpf: tempLeadCpf || null,
+          address_proof: tempLeadAddressProof || null,
+          agree: tempLeadAgree
+        })
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setIsLeadModalOpen(false);
+        // Refresh leads list
+        fetchRegistrations();
+      } else {
+        setLeadError(data.message || "Erro ao salvar o lead.");
+      }
+    } catch (err: any) {
+      console.error(err);
+      setLeadError("Erro ao se conectar com o servidor para salvar o lead.");
+    } finally {
+      setIsSavingLead(false);
+    }
+  };
+
+  const handleLeadProofUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      setLeadProofError("O documento deve ter menos de 2MB.");
+      return;
+    }
+
+    setIsUploadingLeadProof(true);
+    setLeadProofError("");
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      if (typeof reader.result === "string") {
+        setTempLeadAddressProof(reader.result);
+      } else {
+        setLeadProofError("Erro ao processar arquivo.");
+      }
+      setIsUploadingLeadProof(false);
+    };
+    reader.onerror = () => {
+      setLeadProofError("Erro ao ler o arquivo.");
+      setIsUploadingLeadProof(false);
+    };
+    reader.readAsDataURL(file);
+  };
+
   const formatDate = (isoString: string) => {
     try {
       const date = new Date(isoString);
@@ -1262,6 +1383,14 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
                   <Download className="w-4 h-4 group-hover:translate-y-0.5 transition-transform" />
                   <span>Exportar Planilha (CSV)</span>
                 </button>
+
+                <button 
+                  onClick={openAddLeadModal}
+                  className="bg-gradient-to-r from-lime-400 to-cyan-500 text-neutral-950 font-black py-3 px-5 rounded-2xl text-xs transition-all flex items-center justify-center gap-2 hover:scale-105 active:scale-95 cursor-pointer shadow-md shadow-lime-500/10"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Novo Lead</span>
+                </button>
               </div>
             </div>
 
@@ -1418,6 +1547,13 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
                                 className="p-2 bg-emerald-500/10 border border-emerald-500/20 hover:border-emerald-500 hover:bg-emerald-500 text-emerald-400 hover:text-neutral-950 rounded-xl transition-all cursor-pointer hover:scale-105 active:scale-95"
                               >
                                 <MessageSquare className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => openEditLeadModal(reg)}
+                                title="Editar inscrição"
+                                className="p-2 bg-blue-500/10 border border-blue-500/20 hover:border-blue-500 hover:bg-blue-500 text-blue-400 hover:text-white rounded-xl transition-all cursor-pointer hover:scale-105 active:scale-95"
+                              >
+                                <Pencil className="w-4 h-4" />
                               </button>
                               <button
                                 onClick={() => setDeletingId(reg.id)}
@@ -2862,6 +2998,184 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
                   <>
                     <Check className="w-4 h-4" />
                     <span>Salvar</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Lead Add/Edit Modal */}
+      {isLeadModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4 overflow-y-auto">
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setIsLeadModalOpen(false)} />
+          <motion.div 
+            initial={{ scale: 0.95, opacity: 0, y: 15 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            className="bg-neutral-900 border border-white/5 p-6 md:p-8 rounded-[2.5rem] max-w-xl w-full relative z-10 shadow-2xl shadow-lime-500/5 my-8 max-h-[90vh] overflow-y-auto"
+          >
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <span className="text-[10px] text-lime-400 font-mono font-bold uppercase tracking-widest block">Inscrições & Leads</span>
+                <h3 className="text-xl font-black text-white uppercase tracking-tight">
+                  {editingLead ? "Editar Lead" : "Novo Lead Manual"}
+                </h3>
+              </div>
+              <button 
+                onClick={() => setIsLeadModalOpen(false)}
+                className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-neutral-400 hover:text-white transition-all cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {leadError && (
+              <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 text-red-400 text-xs rounded-2xl flex items-start gap-2.5">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>{leadError}</span>
+              </div>
+            )}
+
+            <div className="space-y-4 font-sans text-xs">
+              {/* Row 1: Name */}
+              <div className="space-y-1">
+                <label className="text-[10px] font-mono font-bold tracking-widest text-neutral-400 uppercase block">Nome Completo *</label>
+                <input 
+                  type="text"
+                  value={tempLeadName}
+                  onChange={(e) => setTempLeadName(e.target.value)}
+                  placeholder="Ex: Alexandre Malta"
+                  className="w-full bg-neutral-950 border border-white/10 focus:border-lime-400 rounded-xl py-3 px-4 text-xs text-white focus:outline-none transition-all"
+                />
+              </div>
+
+              {/* Row 2: Email & Whatsapp */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-mono font-bold tracking-widest text-neutral-400 uppercase block">E-mail *</label>
+                  <input 
+                    type="email"
+                    value={tempLeadEmail}
+                    onChange={(e) => setTempLeadEmail(e.target.value)}
+                    placeholder="email@exemplo.com"
+                    className="w-full bg-neutral-950 border border-white/10 focus:border-lime-400 rounded-xl py-3 px-4 text-xs text-white focus:outline-none transition-all"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-mono font-bold tracking-widest text-neutral-400 uppercase block">WhatsApp/Fone *</label>
+                  <input 
+                    type="text"
+                    value={tempLeadWhatsapp}
+                    onChange={(e) => setTempLeadWhatsapp(e.target.value)}
+                    placeholder="(16) 99999-9999"
+                    className="w-full bg-neutral-950 border border-white/10 focus:border-lime-400 rounded-xl py-3 px-4 text-xs text-white focus:outline-none transition-all"
+                  />
+                </div>
+              </div>
+
+              {/* Row 3: CPF & Role */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-mono font-bold tracking-widest text-neutral-400 uppercase block">CPF</label>
+                  <input 
+                    type="text"
+                    value={tempLeadCpf}
+                    onChange={(e) => setTempLeadCpf(e.target.value)}
+                    placeholder="Ex: 000.000.000-00"
+                    className="w-full bg-neutral-950 border border-white/10 focus:border-lime-400 rounded-xl py-3 px-4 text-xs text-white focus:outline-none transition-all"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-mono font-bold tracking-widest text-neutral-400 uppercase block">Cargo / Profissão</label>
+                  <input 
+                    type="text"
+                    value={tempLeadRole}
+                    onChange={(e) => setTempLeadRole(e.target.value)}
+                    placeholder="Ex: Desenvolvedor, Estudante"
+                    className="w-full bg-neutral-950 border border-white/10 focus:border-lime-400 rounded-xl py-3 px-4 text-xs text-white focus:outline-none transition-all"
+                  />
+                </div>
+              </div>
+
+              {/* Row 4: Class location */}
+              <div className="space-y-1">
+                <label className="text-[10px] font-mono font-bold tracking-widest text-neutral-400 uppercase block">Turma / Local de Preferência</label>
+                <select
+                  value={tempLeadLocation}
+                  onChange={(e) => setTempLeadLocation(e.target.value)}
+                  className="w-full bg-neutral-950 border border-white/10 focus:border-lime-400 rounded-xl py-3 px-4 text-xs text-white focus:outline-none transition-all appearance-none cursor-pointer font-sans"
+                >
+                  <option value="sicchierolli">Escola Sicchierolli (Noite • SEG/TER/QUA)</option>
+                  <option value="fatec">FATEC Franca (Tarde • QUA/QUI)</option>
+                </select>
+              </div>
+
+              {/* Row 5: Address proof upload */}
+              <div className="space-y-1">
+                <label className="text-[10px] font-mono font-bold tracking-widest text-neutral-400 uppercase block">Comprovante de Residência</label>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3 bg-neutral-950 p-4 border border-white/5 rounded-2xl">
+                  <label className="flex items-center gap-2 px-4 py-2.5 bg-neutral-900 border border-white/10 hover:border-lime-400/40 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0">
+                    <Upload className="w-4 h-4 text-lime-400" />
+                    <span>{isUploadingLeadProof ? "Carregando..." : "Selecionar Comprovante"}</span>
+                    <input
+                      type="file"
+                      accept="image/*,application/pdf"
+                      onChange={handleLeadProofUpload}
+                      disabled={isUploadingLeadProof}
+                      className="hidden"
+                    />
+                  </label>
+                  <div className="truncate text-[10px] text-neutral-400">
+                    {tempLeadAddressProof ? (
+                      <span className="text-lime-400 font-mono">Arquivo pronto para salvamento</span>
+                    ) : (
+                      "Nenhum comprovante selecionado"
+                    )}
+                  </div>
+                </div>
+                {leadProofError && (
+                  <p className="text-[10px] text-red-400 font-mono mt-1">{leadProofError}</p>
+                )}
+              </div>
+
+              {/* Checkbox: Consent */}
+              <label className="flex items-start gap-2.5 pt-2 cursor-pointer group select-none">
+                <input 
+                  type="checkbox"
+                  checked={tempLeadAgree}
+                  onChange={(e) => setTempLeadAgree(e.target.checked)}
+                  className="mt-0.5 rounded border-white/10 bg-neutral-950 text-lime-400 focus:ring-lime-400/40 focus:ring-offset-neutral-900 w-4 h-4 cursor-pointer"
+                />
+                <span className="text-[10px] leading-normal text-neutral-400 group-hover:text-neutral-300 transition-colors font-sans">
+                  Declaro que este lead concorda com o envio de dados pessoais e termos de participação do curso.
+                </span>
+              </label>
+            </div>
+
+            {/* Modal Buttons */}
+            <div className="flex gap-3 mt-8">
+              <button 
+                onClick={() => setIsLeadModalOpen(false)}
+                disabled={isSavingLead}
+                className="flex-1 border border-white/10 hover:bg-white/5 text-white py-3 rounded-xl text-xs font-bold transition-all cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={handleSaveLead}
+                disabled={isSavingLead || isUploadingLeadProof}
+                className="flex-1 bg-gradient-to-r from-lime-400 to-cyan-500 text-neutral-950 font-black py-3 rounded-xl text-xs uppercase tracking-wider hover:brightness-110 disabled:opacity-50 active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-md shadow-lime-500/10"
+              >
+                {isSavingLead ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    <span>Salvando...</span>
+                  </>
+                ) : (
+                  <>
+                    <Check className="w-4 h-4" />
+                    <span>Salvar Alterações</span>
                   </>
                 )}
               </button>

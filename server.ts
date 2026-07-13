@@ -50,6 +50,47 @@ function getSupabase() {
   return supabaseClient;
 }
 
+// Helper to safely insert or update data into Supabase, stripping columns not present in the database
+async function safeSupabaseQuery(
+  client: any,
+  table: string,
+  action: "insert" | "update",
+  payload: any,
+  id?: string | number
+): Promise<{ data: any; error: any }> {
+  const currentPayload = { ...payload };
+
+  while (true) {
+    let query = client.from(table);
+    let result: any;
+
+    if (action === "insert") {
+      result = await query.insert([currentPayload]).select();
+    } else {
+      result = await query.update(currentPayload).eq("id", id).select();
+    }
+
+    const { data, error } = result;
+
+    if (error) {
+      if (error.code === "PGRST204" && error.message) {
+        const match = error.message.match(/Could not find the '([^']+)' column/);
+        if (match && match[1]) {
+          const missingColumn = match[1];
+          console.warn(`⚠️ Warning: Column '${missingColumn}' not found in Supabase table '${table}'. Stripping and retrying.`);
+          if (missingColumn in currentPayload) {
+            delete currentPayload[missingColumn];
+            continue;
+          }
+        }
+      }
+      return { data: null, error };
+    }
+
+    return { data, error: null };
+  }
+}
+
 // In-memory fallback database for graceful local development
 const inMemoryLeads: any[] = [];
 
@@ -74,23 +115,23 @@ async function startServer() {
 
       const client = getSupabase();
       if (client) {
-        // Insert into Supabase table: "registrations"
-        const { data, error } = await client
-          .from("registrations")
-          .insert([
-            { 
-              name, 
-              email, 
-              whatsapp, 
-              role: role || null, 
-              location, 
-              agree: !!agree,
-              cpf,
-              address_proof,
-              created_at: new Date().toISOString()
-            }
-          ])
-          .select();
+        // Insert into Supabase table: "registrations" using safeSupabaseQuery
+        const { data, error } = await safeSupabaseQuery(
+          client,
+          "registrations",
+          "insert",
+          {
+            name,
+            email,
+            whatsapp,
+            role: role || "",
+            location,
+            agree: !!agree,
+            cpf,
+            address_proof,
+            created_at: new Date().toISOString()
+          }
+        );
 
         if (error) {
           console.warn("Supabase Error during insert:", error);
@@ -490,6 +531,127 @@ ALTER TABLE registrations DISABLE ROW LEVEL SECURITY;
         success: false, 
         message: "Erro ao buscar cadastros.",
         error: err.message 
+      });
+    }
+  });
+
+  // API Route: Create a registration (Admin)
+  app.post("/api/registrations", async (req, res) => {
+    if (!verifyAdminPassword(req)) {
+      return res.status(401).json({ success: false, message: "Não autorizado. Senha administrativa inválida." });
+    }
+    try {
+      const { name, email, whatsapp, role, location, cpf, address_proof, agree } = req.body;
+      if (!name || !email || !whatsapp) {
+        return res.status(400).json({ success: false, message: "Nome, E-mail e WhatsApp são obrigatórios." });
+      }
+
+      const client = getSupabase();
+      if (client) {
+        const { data, error } = await safeSupabaseQuery(
+          client,
+          "registrations",
+          "insert",
+          {
+            name,
+            email,
+            whatsapp,
+            role: role || "",
+            location: location || "sicchierolli",
+            agree: agree !== undefined ? !!agree : true,
+            cpf: cpf || "",
+            address_proof: address_proof || "",
+            created_at: new Date().toISOString()
+          }
+        );
+
+        if (error) throw error;
+        return res.json({ success: true, message: "Inscrição criada com sucesso no Supabase!", data: data?.[0] });
+      } else {
+        const newLead = {
+          id: inMemoryLeads.length + 1,
+          created_at: new Date().toISOString(),
+          name,
+          email,
+          whatsapp,
+          role: role || "",
+          location: location || "sicchierolli",
+          agree: agree !== undefined ? !!agree : true,
+          cpf: cpf || "",
+          address_proof: address_proof || ""
+        };
+        inMemoryLeads.push(newLead);
+        return res.json({ success: true, message: "Inscrição criada com sucesso na memória!", data: newLead });
+      }
+    } catch (err: any) {
+      console.warn("Create registration error:", JSON.stringify(err));
+      const errMsg = err.message || err.details || JSON.stringify(err) || "Erro desconhecido";
+      return res.status(500).json({ 
+        success: false, 
+        message: `Erro ao criar cadastro: ${errMsg}`, 
+        error: errMsg 
+      });
+    }
+  });
+
+  // API Route: Update a registration (Admin)
+  app.put("/api/registrations/:id", async (req, res) => {
+    if (!verifyAdminPassword(req)) {
+      return res.status(401).json({ success: false, message: "Não autorizado. Senha administrativa inválida." });
+    }
+    const { id } = req.params;
+    try {
+      const { name, email, whatsapp, role, location, cpf, address_proof, agree } = req.body;
+      if (!name || !email || !whatsapp) {
+        return res.status(400).json({ success: false, message: "Nome, E-mail e WhatsApp são obrigatórios." });
+      }
+
+      const client = getSupabase();
+      if (client) {
+        const { data, error } = await safeSupabaseQuery(
+          client,
+          "registrations",
+          "update",
+          {
+            name,
+            email,
+            whatsapp,
+            role: role || "",
+            location: location || "sicchierolli",
+            agree: agree !== undefined ? !!agree : true,
+            cpf: cpf || "",
+            address_proof: address_proof || ""
+          },
+          id
+        );
+
+        if (error) throw error;
+        return res.json({ success: true, message: "Inscrição atualizada com sucesso no Supabase!", data: data?.[0] });
+      } else {
+        const index = inMemoryLeads.findIndex(lead => String(lead.id) === String(id));
+        if (index !== -1) {
+          inMemoryLeads[index] = {
+            ...inMemoryLeads[index],
+            name,
+            email,
+            whatsapp,
+            role: role || "",
+            location: location || "sicchierolli",
+            agree: agree !== undefined ? !!agree : true,
+            cpf: cpf || "",
+            address_proof: address_proof || ""
+          };
+          return res.json({ success: true, message: "Inscrição atualizada com sucesso na memória!", data: inMemoryLeads[index] });
+        }
+        return res.status(404).json({ success: false, message: "Inscrição não encontrada na memória." });
+      }
+    } catch (err: any) {
+      console.warn("Update registration error:", JSON.stringify(err));
+      const errMsg = err.message || err.details || JSON.stringify(err) || "Erro desconhecido";
+      return res.status(500).json({ 
+        success: false, 
+        message: `Erro ao atualizar cadastro: ${errMsg}`, 
+        error: errMsg 
       });
     }
   });
